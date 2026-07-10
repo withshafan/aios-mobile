@@ -5,6 +5,8 @@ import '../services/memory_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import 'chat_screen.dart';
+import 'memory_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,18 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final screens = [
       ChatScreen(gemini: _gemini, voice: _voice),
-      const Center(child: Text('Settings')),
+      const MemoryScreen(),
+      const SettingsScreen(),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('AIOS Mobile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: context.read<AuthService>().signOut,
-          ),
-        ],
       ),
       body: screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
@@ -47,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onDestinationSelected: (index) => setState(() => _selectedIndex = index),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
+          NavigationDestination(icon: Icon(Icons.memory), label: 'Memory'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
