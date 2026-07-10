@@ -1,0 +1,30 @@
+name: aios_mobile
+description: AIOS Mobile - Your AI Assistant
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  firebase_core: ^3.10.0
+  firebase_auth: ^5.4.0
+  cloud_firestore: ^5.6.0
+  google_sign_in: ^6.2.2
+  provider: ^6.1.2
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+  http: ^1.2.2
+  google_generative_ai: ^0.4.6
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

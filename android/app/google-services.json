@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "423033937653",
+    "project_id": "aios-mobile",
+    "storage_bucket": "aios-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:423033937653:android:d90a97e3f9ef2c7524efbc",
+        "android_client_info": {
+          "package_name": "com.shafan.aios_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB587GZN4mqy1qI-y_Vt1b-40B5HuF5GFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
