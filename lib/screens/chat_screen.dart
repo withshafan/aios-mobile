@@ -16,6 +16,10 @@ import 'package:open_file/open_file.dart';
 import '../services/calendar_service.dart';
 import '../services/auth_service.dart';
 import '../models/chat_message.dart';
+import 'package:intl/intl.dart';
+import '../theme/tokens.dart';
+import '../theme/aura_theme.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ChatScreen extends StatefulWidget {
   final GeminiService gemini;
@@ -33,6 +37,7 @@ class ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   List<FileAttachment> _attachments = [];
   final FileIngestionService _fileIngestion = FileIngestionService();
+  String _agentAction = '';
 
   @override
   void initState() {
@@ -281,86 +286,193 @@ class ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final messages = context.watch<MemoryService>().messages;
-    return Column(
+    final theme = Theme.of(context).extension<AuraTheme>()!;
+    final voiceService = context.watch<VoiceService>();
+
+    return Stack(
       children: [
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(8),
-            itemCount: messages.length + (_isLoading ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (_isLoading && index == messages.length) {
-                return const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-              final message = messages[index];
-              return _buildMessageBubble(message);
-            },
-          ),
+        Column(
+          children: [
+            // Agent activity banner
+            if (_agentAction.isNotEmpty)
+              Container(
+                height: 36,
+                width: double.infinity,
+                color: AppColors.surfaceRaised,
+                child: Row(
+                  children: [
+                    const SizedBox(width: space3),
+                    const Icon(Icons.auto_awesome, size: 16, color: AppColors.accentCyan),
+                    const SizedBox(width: space2),
+                    Text(_agentAction, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(space4),
+                itemCount: messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (_isLoading && index == messages.length) {
+                    return _buildThinkingIndicator(theme);
+                  }
+                  final message = messages[index];
+                  return _buildMessageBubble(message, theme);
+                },
+              ),
+            ),
+            _buildInputArea(theme),
+          ],
         ),
-        _buildInputArea(),
+        // Voice mode full-screen overlay
+        if (voiceService.isListening)
+          Positioned.fill(
+            child: _buildVoiceOverlay(),
+          ),
       ],
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message) {
-    final isUser = message.isUser;
+  Widget _buildThinkingIndicator(AuraTheme theme) {
     return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isUser ? Colors.blueAccent : Colors.grey[800],
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isUser ? 16 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 16),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (message.imageUrl != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Image.network(message.imageUrl!),
-              ),
-            Text(
-              message.content,
-              style: const TextStyle(fontSize: 16),
+      alignment: Alignment.centerLeft,
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentViolet),
             ),
-            if (message.sources != null && message.sources!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, size: 14, color: Colors.white70),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Sources: ${message.sources!.join(", ")}',
-                        style: const TextStyle(fontSize: 12, color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
+          ),
+          const SizedBox(width: space2),
+          Text('Aura is thinking...', style: TextStyle(color: theme.textSecondary, fontSize: 13)),
+        ],
+      ).animate().fadeIn(duration: 200.ms).slideX(begin: -0.02, end: 0),
     );
   }
 
-  Widget _buildInputArea() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+  Widget _buildMessageBubble(ChatMessage message, AuraTheme theme) {
+    final isUser = message.isUser;
+    final timestamp = message.timestamp;
+    final timeStr = DateFormat('HH:mm').format(timestamp);
+
+    if (isUser) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: space2, left: space10),
+          padding: const EdgeInsets.symmetric(horizontal: space4, vertical: space3),
+          decoration: BoxDecoration(
+            color: theme.surfaceRaised,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(radiusLg),
+              topRight: Radius.circular(radiusLg),
+              bottomLeft: Radius.circular(radiusLg),
+              bottomRight: Radius.circular(radiusXs),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (message.imageUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Image.network(message.imageUrl!),
+                ),
+              Text(message.content, style: TextStyle(color: theme.textPrimary)),
+              if (message.sources != null && message.sources!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Sources: ${message.sources!.join(", ")}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (timeStr.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: space1),
+                  child: Text(timeStr, style: TextStyle(color: theme.textDisabled, fontSize: 11)),
+                ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 200.ms).move(begin: const Offset(0, 10), end: const Offset(0, 0)),
+      );
+    } else {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: space3, right: space8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: AppColors.gradientIdle),
+                ),
+                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (message.imageUrl != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Image.network(message.imageUrl!),
+                      ),
+                    Text(message.content, style: TextStyle(color: theme.textPrimary, height: 1.5)),
+                    if (message.sources != null && message.sources!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Sources: ${message.sources!.join(", ")}',
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (timeStr.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: space1),
+                        child: Text(timeStr, style: TextStyle(color: theme.textDisabled, fontSize: 11)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 200.ms).move(begin: const Offset(0, 8), end: const Offset(0, 0)),
+      );
+    }
+  }
+
+  Widget _buildInputArea(AuraTheme theme) {
+    return Container(
+      padding: const EdgeInsets.all(space3),
+      color: theme.surfaceBase,
       child: Column(
         children: [
           if (_attachments.isNotEmpty)
@@ -373,33 +485,86 @@ class ChatScreenState extends State<ChatScreen> {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.attach_file),
+                icon: const Icon(Icons.attach_file, color: AppColors.textSecondary),
                 onPressed: _pickFile,
-              ),
-              IconButton(
-                icon: Icon(widget.voice.isListening ? Icons.mic : Icons.mic_none),
-                onPressed: _startVoiceInput,
               ),
               Expanded(
                 child: TextField(
                   controller: _controller,
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Message Aura...',
+                    hintStyle: const TextStyle(color: AppColors.textDisabled),
+                    filled: true,
+                    fillColor: AppColors.surfaceRaised,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: space4, vertical: space2),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(24)),
+                      borderRadius: BorderRadius.circular(radiusFull),
+                      borderSide: BorderSide.none,
                     ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
                   ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.send),
+                icon: const Icon(Icons.mic, color: AppColors.textSecondary),
+                onPressed: _startVoiceInput,
+              ),
+              IconButton(
+                icon: const Icon(Icons.send, color: AppColors.accentViolet),
                 onPressed: _sendMessage,
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVoiceOverlay() {
+    return Container(
+      color: AppColors.bgCanvas,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.9, end: 1.1),
+              duration: const Duration(milliseconds: 900),
+              builder: (context, scale, _) {
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(colors: AppColors.gradientActive),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accentViolet.withOpacity(0.4),
+                          blurRadius: 40,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.mic, size: 48, color: Colors.white),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: space7),
+            const Text('Listening...', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+            const SizedBox(height: space10),
+            TextButton(
+              onPressed: () {
+                context.read<VoiceService>().stopWakeWordListening();
+                setState(() {}); // force rebuild to hide overlay
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
       ),
     );
   }

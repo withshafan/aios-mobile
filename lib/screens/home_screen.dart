@@ -26,7 +26,8 @@ import 'plugins_screen.dart';
 import 'browser_screen.dart';
 import 'calendar_screen.dart';
 import 'analytics_screen.dart';
-import 'more_screen.dart'; // we'll create this next
+import 'more_screen.dart';
+import 'dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -80,8 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return ChatScreen(gemini: _gemini, voice: _voice, key: chatKey);
       case 1:
-        // Dashboard screen - we'll create a simple placeholder for now
-        return const _DashboardPlaceholder();
+        return const DashboardScreen();
       case 2:
         return const TasksScreen(); // Workspace defaults to Tasks
       case 3:
@@ -226,14 +226,4 @@ class _NavDestination {
   final String label;
   final IconData icon;
   const _NavDestination(this.label, this.icon);
-}
-
-// Temporary placeholder for Dashboard until we build it
-class _DashboardPlaceholder extends StatelessWidget {
-  const _DashboardPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Dashboard — Coming in Phase 2'));
-  }
 }
