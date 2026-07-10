@@ -8,6 +8,7 @@ import '../services/voice_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/browser_service.dart';
+import '../services/analytics_service.dart';
 import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
@@ -19,6 +20,7 @@ import 'workflow_screen.dart';
 import 'plugins_screen.dart';
 import 'browser_screen.dart';
 import 'calendar_screen.dart';
+import 'analytics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,7 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     final pluginService = context.read<PluginService>();
-    _gemini = GeminiService(pluginService);
+    final analyticsService = context.read<AnalyticsService>();
+    _gemini = GeminiService(pluginService, analyticsService);
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
   }
@@ -60,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final voice = context.watch<VoiceService>();
     final browserService = context.watch<BrowserService>();
 
-    // Navigate to browser if requested
     if (browserService.navigateToBrowser) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -81,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const CalendarScreen(),
       const WorkflowScreen(),
       const PluginsScreen(),
+      const AnalyticsScreen(),
       const SettingsScreen(),
     ];
 
@@ -119,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.calendar_today), label: 'Calendar'),
           NavigationDestination(icon: Icon(Icons.autorenew), label: 'Workflows'),
           NavigationDestination(icon: Icon(Icons.extension), label: 'Plugins'),
+          NavigationDestination(icon: Icon(Icons.analytics), label: 'Analytics'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),

@@ -1,11 +1,13 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'plugin_service.dart';
+import 'analytics_service.dart';
 import '../models/plugin_info.dart';
 
 class GeminiService {
   static const String apiKey = 'AQ.Ab8RN6KKbYNwtMLsyVu1mbIkLRvwoqpLMfPL0L5aDsa7XgDTig'; // Replace this
   late final GenerativeModel _model;
   final PluginService _pluginService;
+  final AnalyticsService _analyticsService;
 
   static const _createTaskFunction = FunctionDeclaration(
     'create_task',
@@ -46,7 +48,7 @@ class GeminiService {
     }, required: ['summary', 'start', 'end']),
   );
 
-  GeminiService(this._pluginService) {
+  GeminiService(this._pluginService, this._analyticsService) {
     _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey);
   }
 
@@ -98,10 +100,19 @@ class GeminiService {
     final chat = functionModel.startChat(history: contents);
     final response = await chat.sendMessage(Content.text(prompt));
 
+    // Token estimation (very approximate)
+    final inputTokens = _analyticsService.estimateTokens(prompt);
+    final outputTokens = _analyticsService.estimateTokens(response.text ?? '');
+
+    // Log message (agent name will be added in chat_screen if needed)
+    await _analyticsService.logMessage(inputTokens, outputTokens);
+
     if (response.functionCalls.isNotEmpty) {
       final call = response.functionCalls.first;
       if (call.name == 'create_task') {
         final args = call.args as Map<String, dynamic>;
+        // Log agent usage
+        await _analyticsService.logMessage(0, 0, agentName: 'task');
         return ChatResponse(
           text: response.text ?? "I've created the task.",
           taskToCreate: AiosTaskCommand(
@@ -112,6 +123,7 @@ class GeminiService {
         );
       } else if (call.name == 'send_email') {
         final args = call.args as Map<String, dynamic>;
+        await _analyticsService.logMessage(0, 0, agentName: 'email');
         return ChatResponse(
           text: response.text ?? "I've prepared an email.",
           emailToSend: EmailCommand(
@@ -122,12 +134,14 @@ class GeminiService {
         );
       } else if (call.name == 'open_website') {
         final args = call.args as Map<String, dynamic>;
+        await _analyticsService.logMessage(0, 0, agentName: 'browser');
         return ChatResponse(
           text: response.text ?? "Opening ${args['url']}.",
           browserUrl: args['url'] as String,
         );
       } else if (call.name == 'create_calendar_event') {
         final args = call.args as Map<String, dynamic>;
+        await _analyticsService.logMessage(0, 0, agentName: 'calendar');
         return ChatResponse(
           text: response.text ?? "I've scheduled the event.",
           calendarEvent: CalendarEventCommand(
@@ -138,10 +152,12 @@ class GeminiService {
           ),
         );
       } else {
+        // Plugin
         final result = await _pluginService.executeFunction(
           call.name,
           call.args is Map<String, dynamic> ? call.args as Map<String, dynamic> : null,
         );
+        await _analyticsService.logMessage(0, 0, agentName: 'plugin');
         return ChatResponse(text: response.text ?? result, pluginResult: result);
       }
     }
