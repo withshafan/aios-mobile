@@ -1,6 +1,5 @@
 import 'plugin_service.dart';
 import 'analytics_service.dart';
-import 'deepseek_service.dart';
 import 'openrouter_service.dart';
 
 class MultiLLMOrchestrator {

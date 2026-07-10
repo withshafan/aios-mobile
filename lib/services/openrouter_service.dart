@@ -36,7 +36,7 @@ class OpenRouterService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'model': 'google/gemini-2.0-flash-lite-preview-02-05:free',   // free model
+          'model': 'meta-llama/llama-3.2-3b-instruct:free',   // free model
           'messages': messages,
         }),
       );
