@@ -1,7 +1,7 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/analytics_service.dart';
+import '../utils/responsive.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
@@ -14,9 +14,23 @@ class AnalyticsScreen extends StatelessWidget {
     const dailyLimit = 15000;
     final remaining = dailyLimit - totalTokens;
 
-    // Prepare agent data for chart
-    final agentData = analytics.agentCountsToday.entries.toList();
+    return ResponsiveBuilder(
+      builder: (context, type) {
+        if (type == DeviceType.desktop) {
+          return Row(
+            children: [
+              Expanded(flex: 2, child: _buildMainContent(analytics, totalTokens, remaining)),
+              const VerticalDivider(),
+              Expanded(flex: 1, child: _buildSidePanel(analytics)),
+            ],
+          );
+        }
+        return _buildMainContent(analytics, totalTokens, remaining);
+      },
+    );
+  }
 
+  Widget _buildMainContent(AnalyticsService analytics, int totalTokens, int remaining) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -74,62 +88,68 @@ class AnalyticsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           // Bar chart
-          agentData.isEmpty
-              ? const Center(child: Text('No agent activity today'))
-              : SizedBox(
-                  height: 200,
-                  child: BarChart(
-                    BarChartData(
-                      alignment: BarChartAlignment.spaceAround,
-                      maxY: agentData
-                              .map((e) => e.value.toDouble())
-                              .reduce((a, b) => a > b ? a : b)
-                              .ceilToDouble() +
-                          1,
-                      barGroups: agentData.map((entry) {
-                        return BarChartGroupData(
-                          x: agentData.indexOf(entry),
-                          barRods: [
-                            BarChartRodData(
-                              toY: entry.value.toDouble(),
-                              color: Colors.blueAccent,
-                              width: 16,
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                      titlesData: FlTitlesData(
-                        show: true,
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              final index = value.toInt();
-                              if (index < agentData.length) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    agentData[index].key,
-                                    style: const TextStyle(fontSize: 10),
-                                  ),
-                                );
-                              }
-                              return const SizedBox();
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            interval: 1,
-                            reservedSize: 28,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+          _buildSidePanel(analytics),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSidePanel(AnalyticsService analytics) {
+    final agentData = analytics.agentCountsToday.entries.toList();
+    if (agentData.isEmpty) {
+      return const Center(child: Text('No agent activity today'));
+    }
+    return SizedBox(
+      height: 200,
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: agentData
+                  .map((e) => e.value.toDouble())
+                  .reduce((a, b) => a > b ? a : b)
+                  .ceilToDouble() +
+              1,
+          barGroups: agentData.map((entry) {
+            return BarChartGroupData(
+              x: agentData.indexOf(entry),
+              barRods: [
+                BarChartRodData(
+                  toY: entry.value.toDouble(),
+                  color: Colors.blueAccent,
+                  width: 16,
+                ),
+              ],
+            );
+          }).toList(),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index < agentData.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        agentData[index].key,
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 1,
+                reservedSize: 28,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

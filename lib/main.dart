@@ -100,16 +100,21 @@ class MyApp extends StatelessWidget {
           update: (_, g, b, prev) => prev ?? TaskRunnerService(g, b),
         ),
       ],
-      child: MaterialApp(
-        title: 'AIOS Mobile',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.dark,
+      child: Builder(
+        builder: (context) => MaterialApp(
+          title: 'AIOS Mobile',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+            textTheme: Theme.of(context).textTheme.apply(
+              fontSizeFactor: MediaQuery.textScalerOf(context).scale(1.0),
+            ),
           ),
-          useMaterial3: true,
+          home: const AuthGate(),
         ),
-        home: const AuthGate(),
       ),
     );
   }

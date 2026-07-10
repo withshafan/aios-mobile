@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
@@ -11,7 +12,7 @@ import '../services/browser_service.dart';
 import '../services/analytics_service.dart';
 import '../services/system_prompt_service.dart';
 import '../services/planner_service.dart';
-
+import '../services/continuity_service.dart';
 import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
@@ -24,34 +25,28 @@ import 'plugins_screen.dart';
 import 'browser_screen.dart';
 import 'calendar_screen.dart';
 import 'analytics_screen.dart';
-import 'planner_screen.dart';
-import 'goal_screen.dart';
+import 'goals_screen.dart';
 import 'knowledge_graph_screen.dart';
-import 'plugin_marketplace_screen.dart';
-import 'research_screen.dart';
+import 'marketplace_screen.dart';
+import 'research_mission_screen.dart';
 import 'knowledge_base_screen.dart';
-import 'approval_settings_screen.dart';
+import 'approval_level_screen.dart';
 import 'digital_twin_screen.dart';
-
-import 'cognitive/executive_dashboard.dart';
-import 'cognitive/cognitive_state_screen.dart';
-import 'cognitive/world_model_screen.dart';
-import 'cognitive/life_timeline_screen.dart';
-import 'cognitive/strategic_mission_screen.dart';
-import 'cognitive/attention_screen.dart';
-import 'cognitive/curiosity_screen.dart';
-import 'cognitive/opportunities_screen.dart';
-import 'cognitive/coach_screen.dart';
-import 'cognitive/emotional_screen.dart';
-import 'cognitive/trust_screen.dart';
-import 'cognitive/reality_verification_screen.dart';
-import 'cognitive/maintenance_screen.dart';
-import 'cognitive/personality_settings_screen.dart';
-
+import 'cognitive_state_screen.dart';
+import 'world_model_screen.dart';
+import 'life_timeline_screen.dart';
+import 'attention_center_screen.dart';
+import 'strategic_missions_screen.dart';
+import 'curiosity_feed_screen.dart';
+import 'opportunities_screen.dart';
+import 'personal_coach_screen.dart';
+import 'emotional_context_screen.dart';
+import 'trust_reality_screen.dart';
+import 'reality_verification_screen.dart';
+import 'maintenance_screen.dart';
+import 'personality_settings_screen.dart';
 import 'connected_services_screen.dart';
 import 'unified_search_screen.dart';
-import 'research_mission_screen.dart';
-
 import 'llm_providers_screen.dart';
 import 'agent_team_screen.dart';
 import 'self_programming_screen.dart';
@@ -65,7 +60,6 @@ import 'autonomous_runner_screen.dart';
 import 'webhook_management_screen.dart';
 import 'shared_projects_screen.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -75,8 +69,27 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final GeminiService _gemini;
   final VoiceService _voice = VoiceService();
-  String _currentScreen = 'chat';
+  int _selectedIndex = 0;
   final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContinuityService _continuity = ContinuityService();
+
+  final List<_NavItem> _navItems = const [
+    _NavItem('Chat', Icons.chat),
+    _NavItem('Tasks', Icons.task_alt),
+    _NavItem('Memory', Icons.memory),
+    _NavItem('Android', Icons.phone_android),
+    _NavItem('Files', Icons.folder),
+    _NavItem('Docs', Icons.article),
+    _NavItem('Browser', Icons.language),
+    _NavItem('Calendar', Icons.calendar_today),
+    _NavItem('Workflows', Icons.autorenew),
+    _NavItem('Plugins', Icons.extension),
+    _NavItem('Analytics', Icons.analytics),
+    _NavItem('Code', Icons.code),
+    _NavItem('Auto Agent', Icons.smart_toy),
+    _NavItem('Settings', Icons.settings),
+  ];
 
   @override
   void initState() {
@@ -88,12 +101,27 @@ class _HomeScreenState extends State<HomeScreen> {
     _gemini = GeminiService(pluginService, analyticsService, systemPromptService, plannerService);
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
+    _restoreLastSession();
+  }
+
+  void _restoreLastSession() async {
+    final state = await _continuity.restoreState();
+    if (state != null && state['selectedNavIndex'] != null) {
+      if (mounted) {
+        setState(() => _selectedIndex = state['selectedNavIndex'] as int);
+      }
+    }
+  }
+
+  void _onNavChanged(int index) {
+    setState(() => _selectedIndex = index);
+    _continuity.saveState(selectedNavIndex: index, activeChatScreen: _navItems[index].label);
   }
 
   void _setupWakeWord() {
     _voice.onWakeWordDetected = () async {
       if (!mounted) return;
-      setState(() => _currentScreen = 'chat');
+      _onNavChanged(0);
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       final spoken = await _voice.listen(timeout: const Duration(seconds: 7));
@@ -103,295 +131,149 @@ class _HomeScreenState extends State<HomeScreen> {
     };
   }
 
-  Widget _buildBody() {
-    switch (_currentScreen) {
-      case 'chat': return ChatScreen(gemini: _gemini, voice: _voice, key: chatKey);
-      case 'tasks': return const TasksScreen();
-      case 'memory': return const MemoryScreen();
-      case 'android': return const AndroidScreen();
-      case 'files': return const FilesScreen();
-      case 'docs': return const DocumentsScreen();
-      case 'browser': return const BrowserScreen();
-      case 'calendar': return const CalendarScreen();
-      case 'workflows': return const WorkflowScreen();
-      case 'planner': return const PlannerScreen();
-      case 'plugins': return const PluginsScreen();
-      case 'analytics': return const AnalyticsScreen();
-      case 'goals': return const GoalScreen();
-      case 'knowledge_graph': return const KnowledgeGraphScreen();
-      case 'marketplace': return const PluginMarketplaceScreen();
-      case 'research': return const ResearchScreen();
-      case 'knowledge_base': return const KnowledgeBaseScreen();
-      case 'approval': return const ApprovalSettingsScreen();
-      case 'digital_twin': return const DigitalTwinScreen();
-      
-      case 'executive_dashboard': return const ExecutiveDashboard();
-      case 'cognitive_state': return CognitiveStateScreen();
-      case 'world_model': return WorldModelScreen();
-      case 'life_timeline': return LifeTimelineScreen();
-      case 'strategic_missions': return StrategicMissionScreen();
-      case 'attention': return AttentionScreen();
-      case 'curiosity': return CuriosityScreen();
-      case 'opportunities': return OpportunitiesScreen();
-      case 'coach': return CoachScreen();
-      case 'emotional': return EmotionalScreen();
-      case 'trust': return TrustScreen();
-      case 'reality_verification': return RealityVerificationScreen();
-      case 'maintenance': return MaintenanceScreen();
-      case 'personality_settings': return PersonalitySettingsScreen();
-
+  Widget _buildScreen() {
+    if (_selectedIndex >= _navItems.length) _selectedIndex = 0;
+    switch (_navItems[_selectedIndex].label) {
+      case 'Chat': return ChatScreen(gemini: _gemini, voice: _voice, key: chatKey);
+      case 'Tasks': return const TasksScreen();
+      case 'Memory': return const MemoryScreen();
+      case 'Android': return const AndroidScreen();
+      case 'Files': return const FilesScreen();
+      case 'Docs': return const DocumentsScreen();
+      case 'Browser': return const BrowserScreen();
+      case 'Calendar': return const CalendarScreen();
+      case 'Workflows': return const WorkflowScreen();
+      case 'Plugins': return const PluginsScreen();
+      case 'Analytics': return const AnalyticsScreen();
+      case 'Code': return const CodeExecutionScreen();
+      case 'Auto Agent': return const AutonomousRunnerScreen();
       default: return const SettingsScreen();
     }
-  }
-  
-  void _navigate(BuildContext context, String screenId) {
-    setState(() => _currentScreen = screenId);
-    Navigator.pop(context);
-  }
-
-  Widget _drawerItem(BuildContext context, String title, IconData icon, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: onTap,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final voice = context.watch<VoiceService>();
-    final browserService = context.watch<BrowserService>();
-
-    if (browserService.navigateToBrowser) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() => _currentScreen = 'browser');
-          browserService.didNavigate();
+    return ResponsiveBuilder(
+      builder: (context, deviceType) {
+        if (deviceType == DeviceType.desktop) {
+          return _buildDesktopLayout();
+        } else if (deviceType == DeviceType.tablet) {
+          return _buildTabletLayout();
         }
-      });
-    }
+        return _buildPhoneLayout();
+      },
+    );
+  }
 
+  Widget _buildPhoneLayout() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text('AIOS – ${_currentScreen.replaceAll('_', ' ').toUpperCase()}'),
+        title: Text(_navItems[_selectedIndex].label),
         actions: [
           IconButton(
-            icon: Icon(
-              voice.wakeWordActive ? Icons.mic : Icons.mic_none,
-              color: voice.wakeWordActive ? Colors.red : null,
-            ),
-            tooltip: voice.wakeWordActive ? 'Listening for "Hey AIOS"' : 'Enable Wake Word',
+            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
             onPressed: () {
-              if (voice.wakeWordActive) {
-                voice.stopWakeWordListening();
+              if (context.read<VoiceService>().wakeWordActive) {
+                context.read<VoiceService>().stopWakeWordListening();
               } else {
-                voice.startWakeWordListening();
+                context.read<VoiceService>().startWakeWordListening();
               }
             },
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('AIOS AURA Cognitive OS', style: TextStyle(color: Colors.white, fontSize: 24)),
-            ),
-            _drawerItem(context, 'Chat', Icons.chat, () => _navigate(context, 'chat')),
-            _drawerItem(context, 'Executive Dashboard', Icons.dashboard, () => _navigate(context, 'executive_dashboard')),
-            const Divider(),
-            _drawerItem(context, 'Cognitive State', Icons.psychology, () => _navigate(context, 'cognitive_state')),
-            _drawerItem(context, 'World Model', Icons.public, () => _navigate(context, 'world_model')),
-            _drawerItem(context, 'Life Timeline', Icons.timeline, () => _navigate(context, 'life_timeline')),
-            _drawerItem(context, 'Strategic Missions', Icons.flag, () => _navigate(context, 'strategic_missions')),
-            const Divider(),
-            _drawerItem(context, 'Attention Center', Icons.notifications_active, () => _navigate(context, 'attention')),
-            _drawerItem(context, 'Curiosity Feed', Icons.explore, () => _navigate(context, 'curiosity')),
-            _drawerItem(context, 'Opportunities', Icons.lightbulb, () => _navigate(context, 'opportunities')),
-            const Divider(),
-            _drawerItem(context, 'Personal Coach', Icons.trending_up, () => _navigate(context, 'coach')),
-            _drawerItem(context, 'Emotional Context', Icons.sentiment_satisfied, () => _navigate(context, 'emotional')),
-            _drawerItem(context, 'Trust & Reality', Icons.verified, () => _navigate(context, 'trust')),
-            _drawerItem(context, 'Reality Verification', Icons.fact_check, () => _navigate(context, 'reality_verification')),
-            const Divider(),
-            _drawerItem(context, 'System Maintenance', Icons.build, () => _navigate(context, 'maintenance')),
-            _drawerItem(context, 'Personality Mode', Icons.settings_accessibility, () => _navigate(context, 'personality_settings')),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.link),
-              title: const Text('Connected Services'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ConnectedServicesScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.search),
-              title: const Text('Unified Search'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const UnifiedSearchScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Digital Twin'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const DigitalTwinScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.science),
-              title: const Text('Autonomous Research'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ResearchMissionScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.memory),
-              title: const Text('Multi-LLM Orchestrator'),
-              onTap: () {
-                Navigator.pop(context);
-                // Show a simple info or test screen (optional)
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Multi-LLM orchestrator active in background')));
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.hub),
-              title: const Text('LLM Providers'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const LLMProvidersScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.groups),
-              title: const Text('AI Team'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AgentTeamScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.code),
-              title: const Text('Self-Programming'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SelfProgrammingScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('AI OS Kernel'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AIOSKernelDashboard()));
-              },
-            ),
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text('Governance & Control', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.gavel),
-              title: const Text('Action Tiers Policy'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ActionTiersScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text('Audit Log'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AuditLogScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.health_and_safety),
-              title: const Text('System Health (Circuit Breakers)'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SystemHealthScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.memory_sharp),
-              title: const Text('Memory Integrity'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const MemoryIntegrityScreen()));
-              },
-            ),
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text('Modern Agent Capabilities', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.code),
-              title: const Text('Code Sandbox'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const CodeExecutionScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.smart_toy),
-              title: const Text('Autonomous Runner'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AutonomousRunnerScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.webhook),
-              title: const Text('Webhook Triggers'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const WebhookManagementScreen()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.group_work),
-              title: const Text('Shared Workspaces'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SharedProjectsScreen()));
-              },
-            ),
-            const Divider(),
-            // Legacy tools
-            _drawerItem(context, 'Tasks', Icons.task_alt, () => _navigate(context, 'tasks')),
-            _drawerItem(context, 'Planner', Icons.account_tree, () => _navigate(context, 'planner')),
-            _drawerItem(context, 'Android', Icons.phone_android, () => _navigate(context, 'android')),
-            _drawerItem(context, 'Files', Icons.folder, () => _navigate(context, 'files')),
-            _drawerItem(context, 'Docs', Icons.article, () => _navigate(context, 'docs')),
-            _drawerItem(context, 'Browser', Icons.language, () => _navigate(context, 'browser')),
-            _drawerItem(context, 'Calendar', Icons.calendar_today, () => _navigate(context, 'calendar')),
-            _drawerItem(context, 'Workflows', Icons.autorenew, () => _navigate(context, 'workflows')),
-            _drawerItem(context, 'Plugins', Icons.extension, () => _navigate(context, 'plugins')),
-            _drawerItem(context, 'Analytics', Icons.analytics, () => _navigate(context, 'analytics')),
-            const Divider(),
-            _drawerItem(context, 'Goals', Icons.flag, () => _navigate(context, 'goals')),
-            _drawerItem(context, 'Knowledge Graph', Icons.share, () => _navigate(context, 'knowledge_graph')),
-            _drawerItem(context, 'Plugin Marketplace', Icons.store, () => _navigate(context, 'marketplace')),
-            _drawerItem(context, 'Research Mode', Icons.science, () => _navigate(context, 'research')),
-            _drawerItem(context, 'Knowledge Base', Icons.search, () => _navigate(context, 'knowledge_base')),
-            _drawerItem(context, 'Approval Level', Icons.security, () => _navigate(context, 'approval')),
-            _drawerItem(context, 'Digital Twin', Icons.person, () => _navigate(context, 'digital_twin')),
-            const Divider(),
-            _drawerItem(context, 'Settings', Icons.settings, () => _navigate(context, 'settings')),
-          ],
-        ),
+      body: _buildScreen(),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onNavChanged,
+        destinations: _navItems.map((item) =>
+          NavigationDestination(icon: Icon(item.icon), label: item.label)
+        ).toList(),
       ),
-      body: _buildBody(),
     );
   }
+
+  Widget _buildTabletLayout() {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: Text(_navItems[_selectedIndex].label),
+        actions: [
+          IconButton(
+            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
+            onPressed: () {
+              if (context.read<VoiceService>().wakeWordActive) {
+                context.read<VoiceService>().stopWakeWordListening();
+              } else {
+                context.read<VoiceService>().startWakeWordListening();
+              }
+            },
+          ),
+        ],
+      ),
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: _onNavChanged,
+            labelType: NavigationRailLabelType.all,
+            destinations: _navItems.map((item) =>
+              NavigationRailDestination(
+                icon: Icon(item.icon),
+                label: Text(item.label),
+              )
+            ).toList(),
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(child: _buildScreen()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: Text(_navItems[_selectedIndex].label),
+        actions: [
+          IconButton(
+            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
+            onPressed: () {
+              if (context.read<VoiceService>().wakeWordActive) {
+                context.read<VoiceService>().stopWakeWordListening();
+              } else {
+                context.read<VoiceService>().startWakeWordListening();
+              }
+            },
+          ),
+        ],
+      ),
+      body: Row(
+        children: [
+          Container(
+            width: 200,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: ListView(
+              children: _navItems.map((item) => ListTile(
+                leading: Icon(item.icon),
+                title: Text(item.label),
+                selected: _navItems.indexOf(item) == _selectedIndex,
+                onTap: () => _onNavChanged(_navItems.indexOf(item)),
+              )).toList(),
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(child: _buildScreen()),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem {
+  final String label;
+  final IconData icon;
+  const _NavItem(this.label, this.icon);
 }
