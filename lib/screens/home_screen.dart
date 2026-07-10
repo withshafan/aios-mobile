@@ -26,17 +26,38 @@ class _HomeScreenState extends State<HomeScreen> {
   final GeminiService _gemini = GeminiService();
   final VoiceService _voice = VoiceService();
   int _selectedIndex = 0;
+  final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
 
   @override
   void initState() {
     super.initState();
     context.read<MemoryService>().loadMessages();
+    _setupWakeWord();
+  }
+
+  void _setupWakeWord() {
+    _voice.onWakeWordDetected = () async {
+      if (!mounted) return;
+      // Switch to Chat tab
+      setState(() => _selectedIndex = 0);
+
+      // Wait for the tab to appear
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      if (!mounted) return;
+      // Start voice input and capture command
+      final spoken = await _voice.listen(timeout: const Duration(seconds: 7));
+      if (spoken != null && spoken.isNotEmpty && mounted) {
+        chatKey.currentState?.sendVoiceCommand(spoken);
+      }
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final voice = context.watch<VoiceService>();
     final screens = [
-      ChatScreen(gemini: _gemini, voice: _voice),
+      ChatScreen(gemini: _gemini, voice: _voice, key: chatKey),
       const TasksScreen(),
       const MemoryScreen(),
       const AndroidScreen(),
@@ -49,6 +70,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AIOS Mobile'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              voice.wakeWordActive ? Icons.mic : Icons.mic_none,
+              color: voice.wakeWordActive ? Colors.red : null,
+            ),
+            tooltip: voice.wakeWordActive ? 'Listening for "Hey AIOS"' : 'Enable Wake Word',
+            onPressed: () {
+              if (voice.wakeWordActive) {
+                voice.stopWakeWordListening();
+              } else {
+                voice.startWakeWordListening();
+              }
+            },
+          ),
+        ],
       ),
       body: screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/memory_service.dart';
+import '../services/task_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../models/chat_message.dart';
-import '../services/task_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final GeminiService gemini;
@@ -13,10 +13,10 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.gemini, required this.voice});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<ChatScreen> createState() => ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
@@ -25,6 +25,11 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     widget.voice.initStt();
+  }
+
+  void sendVoiceCommand(String text) {
+    _controller.text = text;
+    _sendMessage();
   }
 
   void _sendMessage() async {
@@ -43,11 +48,9 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final response = await widget.gemini.sendMessage(text, history);
       
-      // Save AI response to memory
       await memory.sendMessage(response.text, isUser: false);
       widget.voice.speak(response.text);
 
-      // If the AI wants to create a task, do it now
       if (response.taskToCreate != null) {
         final cmd = response.taskToCreate!;
         await context.read<TaskService>().createFromCommand(
@@ -55,7 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
           cmd.dueDate,
           cmd.description,
         );
-        // Tell user it was saved
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Task "${cmd.title}" created!')),
         );
