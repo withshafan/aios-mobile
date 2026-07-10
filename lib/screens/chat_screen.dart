@@ -69,39 +69,46 @@ class ChatScreenState extends State<ChatScreen> {
       }
 
       if (response.emailToSend != null) {
-        final cmd = response.emailToSend!;
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Send email?'),
-            content: Text('To: ${cmd.to}\nSubject: ${cmd.subject}\nBody: ${cmd.body}'),
-            actions: [
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () => Navigator.pop(ctx, false),
-              ),
-              TextButton(
-                child: const Text('Send'),
-                onPressed: () => Navigator.pop(ctx, true),
-              ),
-            ],
-          ),
-        );
-        if (confirm == true) {
-          final emailService = EmailService();
-          try {
-            final result = await emailService.sendEmail(
-              to: cmd.to,
-              subject: cmd.subject,
-              body: cmd.body,
-            );
-            await memory.sendMessage(result, isUser: false);
-            widget.voice.speak(result);
-          } catch (e) {
-            await memory.sendMessage('Failed to send email: $e', isUser: false);
-          }
+        final cb = context.read<CircuitBreakerService>();
+        if (await cb.isAgentTripped('email')) {
+          await memory.sendMessage('Email agent is currently tripped due to too many failures. Please try again later or reset in System Health.', isUser: false);
         } else {
-          await memory.sendMessage('Email cancelled.', isUser: false);
+          final cmd = response.emailToSend!;
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Send email?'),
+              content: Text('To: ${cmd.to}\nSubject: ${cmd.subject}\nBody: ${cmd.body}'),
+              actions: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(ctx, false),
+                ),
+                TextButton(
+                  child: const Text('Send'),
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+              ],
+            ),
+          );
+          if (confirm == true) {
+            final emailService = EmailService();
+            try {
+              final result = await emailService.sendEmail(
+                to: cmd.to,
+                subject: cmd.subject,
+                body: cmd.body,
+              );
+              await cb.clearFailures('email');
+              await memory.sendMessage(result, isUser: false);
+              widget.voice.speak(result);
+            } catch (e) {
+              await cb.recordFailure('email');
+              await memory.sendMessage('Failed to send email: $e', isUser: false);
+            }
+          } else {
+            await memory.sendMessage('Email cancelled.', isUser: false);
+          }
         }
       }
 
@@ -111,46 +118,53 @@ class ChatScreenState extends State<ChatScreen> {
       }
 
       if (response.calendarEvent != null) {
-        final cmd = response.calendarEvent!;
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Create calendar event?'),
-            content: Text('${cmd.summary}\nFrom: ${cmd.start}\nTo: ${cmd.end}'),
-            actions: [
-              TextButton(
-                child: const Text('Cancel'),
-                onPressed: () => Navigator.pop(ctx, false),
-              ),
-              TextButton(
-                child: const Text('Create'),
-                onPressed: () => Navigator.pop(ctx, true),
-              ),
-            ],
-          ),
-        );
-        if (confirm == true) {
-          final auth = context.read<AuthService>();
-          final googleUser = auth.googleUser;
-          if (googleUser != null) {
-            final calendarService = CalendarService();
-            try {
-              await calendarService.createEvent(
-                googleUser,
-                summary: cmd.summary,
-                start: cmd.start,
-                end: cmd.end,
-                description: cmd.description,
-              );
-              await memory.sendMessage('Event "${cmd.summary}" added to your calendar.', isUser: false);
-            } catch (e) {
-              await memory.sendMessage('Failed to create event: $e', isUser: false);
+        final cb = context.read<CircuitBreakerService>();
+        if (await cb.isAgentTripped('calendar')) {
+          await memory.sendMessage('Calendar agent is currently tripped due to too many failures. Please try again later or reset in System Health.', isUser: false);
+        } else {
+          final cmd = response.calendarEvent!;
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Create calendar event?'),
+              content: Text('${cmd.summary}\nFrom: ${cmd.start}\nTo: ${cmd.end}'),
+              actions: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(ctx, false),
+                ),
+                TextButton(
+                  child: const Text('Create'),
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+              ],
+            ),
+          );
+          if (confirm == true) {
+            final auth = context.read<AuthService>();
+            final googleUser = auth.googleUser;
+            if (googleUser != null) {
+              final calendarService = CalendarService();
+              try {
+                await calendarService.createEvent(
+                  googleUser,
+                  summary: cmd.summary,
+                  start: cmd.start,
+                  end: cmd.end,
+                  description: cmd.description,
+                );
+                await cb.clearFailures('calendar');
+                await memory.sendMessage('Event "${cmd.summary}" added to your calendar.', isUser: false);
+              } catch (e) {
+                await cb.recordFailure('calendar');
+                await memory.sendMessage('Failed to create event: $e', isUser: false);
+              }
+            } else {
+              await memory.sendMessage('Calendar access not available. Please re-login.', isUser: false);
             }
           } else {
-            await memory.sendMessage('Calendar access not available. Please re-login.', isUser: false);
+            await memory.sendMessage('Event creation cancelled.', isUser: false);
           }
-        } else {
-          await memory.sendMessage('Event creation cancelled.', isUser: false);
         }
       }
 

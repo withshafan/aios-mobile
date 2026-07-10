@@ -29,6 +29,8 @@ import 'services/connected_services_service.dart';
 import 'services/multi_llm_service.dart';
 import 'services/agent_team_service.dart';
 import 'services/self_programming_service.dart';
+import 'services/audit_service.dart';
+import 'services/circuit_breaker_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -76,6 +78,8 @@ class MyApp extends StatelessWidget {
         Provider<MultiLLMService>(create: (_) => MultiLLMService()),
         Provider<AgentTeamService>(create: (_) => AgentTeamService()),
         Provider<SelfProgrammingService>(create: (_) => SelfProgrammingService()),
+        Provider<AuditService>(create: (_) => AuditService()),
+        Provider<CircuitBreakerService>(create: (_) => CircuitBreakerService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',

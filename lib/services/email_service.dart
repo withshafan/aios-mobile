@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'audit_service.dart';
 
 class EmailService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -59,6 +60,15 @@ class EmailService {
 
     try {
       final sendReport = await send(message, smtpServer);
+      
+      final audit = AuditService();
+      await audit.log(
+        agent: 'email',
+        action: 'send_email',
+        tier: 'irreversible',
+        details: {'to': to, 'subject': subject},
+      );
+      
       return 'Email sent to $to';
     } on MailerException catch (e) {
       return 'Failed to send email: ${e.toString()}';

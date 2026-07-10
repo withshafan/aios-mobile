@@ -57,6 +57,11 @@ import 'agent_team_screen.dart';
 import 'self_programming_screen.dart';
 import 'ai_os_kernel_dashboard.dart';
 
+import 'governance/action_tiers_screen.dart';
+import 'governance/audit_log_screen.dart';
+import 'governance/system_health_screen.dart';
+import 'governance/memory_integrity_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -282,6 +287,43 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AIOSKernelDashboard()));
+              },
+            ),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text('Governance & Control', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.gavel),
+              title: const Text('Action Tiers Policy'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ActionTiersScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Audit Log'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AuditLogScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.health_and_safety),
+              title: const Text('System Health (Circuit Breakers)'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SystemHealthScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.memory_sharp),
+              title: const Text('Memory Integrity'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const MemoryIntegrityScreen()));
               },
             ),
             const Divider(),
