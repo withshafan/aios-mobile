@@ -5,7 +5,14 @@ import '../services/task_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../services/email_service.dart';
-import '../services/browser_service.dart';
+import 'dart:io';
+import '../services/circuit_breaker_service.dart';
+import 'package:file_picker/file_picker.dart';
+import '../models/file_attachment.dart';
+import '../services/file_ingestion_service.dart';
+import '../services/document_output_service.dart';
+import '../services/audit_service.dart';
+import 'package:open_file/open_file.dart';
 import '../services/calendar_service.dart';
 import '../services/auth_service.dart';
 import '../models/chat_message.dart';
@@ -24,6 +31,8 @@ class ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+  List<FileAttachment> _attachments = [];
+  final FileIngestionService _fileIngestion = FileIngestionService();
 
   @override
   void initState() {
@@ -38,10 +47,19 @@ class ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _attachments.isEmpty) return;
+    
+    final List<FileAttachment> attachments = List.from(_attachments);
+    _attachments.clear();
     _controller.clear();
+    
     final memory = context.read<MemoryService>();
-    await memory.sendMessage(text, isUser: true);
+
+    String userDisplay = text;
+    if (attachments.isNotEmpty) {
+      userDisplay += '\n📎 ${attachments.map((a) => a.fileName).join(', ')}';
+    }
+    await memory.sendMessage(userDisplay, isUser: true);
 
     List<String> history = memory.messages
         .map((m) => m.isUser ? 'User: ${m.content}' : 'AI: ${m.content}')
@@ -50,7 +68,8 @@ class ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await widget.gemini.sendMessage(text, history);
+      FileAttachment? file = attachments.isNotEmpty ? attachments.first : null;
+      final response = await widget.gemini.sendMessageWithFile(text, history, file);
       
       await memory.sendMessage(response.text, isUser: false);
       widget.voice.speak(response.text);
@@ -170,9 +189,62 @@ class ChatScreenState extends State<ChatScreen> {
 
       if (response.plannerAction != null) {
         // Planner already updated, just show confirmation
-        // It's already handled in the general response text handling
-        // But we could add a special UI thing here if wanted
       }
+
+      if (response.generateDocument != null) {
+        final cmd = response.generateDocument!;
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Generate Document?'),
+            content: Text('Title: ${cmd.title}\nFormat: ${cmd.format}'),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
+              TextButton(
+                child: const Text('Generate'),
+                onPressed: () => Navigator.pop(ctx, true),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirm == true) {
+          try {
+            final outputService = DocumentOutputService();
+            String path = '';
+            if (cmd.format == 'pdf') {
+              path = await outputService.generatePdf(cmd.title, [cmd.content]);
+            } else if (cmd.format == 'xlsx') {
+              // Very basic CSV parsing
+              final rows = cmd.content.split('\n').map((row) => row.split(',')).toList();
+              path = await outputService.generateExcel(cmd.title, rows);
+            } else if (cmd.format == 'docx') {
+              path = await outputService.generateDocx(cmd.title, [cmd.content]);
+            } else if (cmd.format == 'pptx') {
+              path = await outputService.generatePptx(cmd.title, [cmd.content]);
+            }
+            
+            final audit = AuditService();
+            await audit.log(
+              agent: 'document',
+              action: 'generate_document',
+              tier: 'reversible',
+              details: {'title': cmd.title, 'format': cmd.format, 'path': path},
+            );
+            
+            await memory.sendMessage('Document saved at: $path', isUser: false);
+            OpenFile.open(path);
+          } catch (e) {
+            await memory.sendMessage('Failed to generate document: $e', isUser: false);
+          }
+        } else {
+          await memory.sendMessage('Document generation cancelled.', isUser: false);
+        }
+      }
+
     } catch (e) {
       await memory.sendMessage('Sorry, something went wrong.', isUser: false);
     } finally {
@@ -258,31 +330,81 @@ class ChatScreenState extends State<ChatScreen> {
   Widget _buildInputArea() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Row(
+      child: Column(
         children: [
-          IconButton(
-            icon: Icon(widget.voice.isListening ? Icons.mic : Icons.mic_none),
-            onPressed: _startVoiceInput,
-          ),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                hintText: 'Type a message...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(24)),
-                ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onSubmitted: (_) => _sendMessage(),
+          if (_attachments.isNotEmpty)
+            Wrap(
+              children: _attachments.map((att) => Chip(
+                label: Text(att.fileName, style: const TextStyle(fontSize: 12)),
+                onDeleted: () => setState(() => _attachments.remove(att)),
+              )).toList(),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: _sendMessage,
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.attach_file),
+                onPressed: _pickFile,
+              ),
+              IconButton(
+                icon: Icon(widget.voice.isListening ? Icons.mic : Icons.mic_none),
+                onPressed: _startVoiceInput,
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Type a message...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(24)),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send),
+                onPressed: _sendMessage,
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  void _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx', 'txt', 'md', 'jpg', 'jpeg', 'png', 'webp'],
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      if (file.path != null) {
+        final bytes = await File(file.path!).readAsBytes();
+        final mime = _mimeFromExtension(file.extension ?? '');
+        final attachment = FileAttachment(
+          fileName: file.name,
+          mimeType: mime,
+          bytes: bytes,
+        );
+        setState(() => _attachments.add(attachment));
+      }
+    }
+  }
+
+  String _mimeFromExtension(String ext) {
+    switch (ext) {
+      case 'pdf': return 'application/pdf';
+      case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'txt': return 'text/plain';
+      case 'md': return 'text/markdown';
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      case 'webp': return 'image/webp';
+      default: return 'application/octet-stream';
+    }
   }
 }
