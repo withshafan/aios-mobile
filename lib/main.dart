@@ -25,6 +25,7 @@ import 'services/onboarding_service.dart';
 import 'screens/splash_screen.dart';
 import 'services/connected_services_service.dart';
 import 'services/agent_team_service.dart';
+import 'services/voice_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,6 +77,7 @@ class MyApp extends StatelessWidget {
           debugPrint('Creating AuthService...');
           return AuthService();
         }),
+        ChangeNotifierProvider(create: (_) => VoiceService()),
         ChangeNotifierProvider(create: (_) {
           debugPrint('Creating MemoryService...');
           return MemoryService();
