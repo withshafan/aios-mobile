@@ -27,23 +27,41 @@ import 'services/connected_services_service.dart';
 import 'services/agent_team_service.dart';
 
 void main() async {
-  debugPrint('===== START main() =====');
   WidgetsFlutterBinding.ensureInitialized();
-  debugPrint('Binding ensured.');
 
   try {
-    debugPrint('Calling Firebase.initializeApp()...');
     await Firebase.initializeApp();
-    debugPrint('Firebase initialized successfully.');
-  } catch (e, stack) {
-    debugPrint('Firebase init FAILED: $e\n$stack');
-    // Continue anyway? Or rethrow? For now, rethrow.
-    rethrow;
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+    runApp(const FirebaseInitErrorScreen());
+    return; // Stop execution – do NOT rethrow
   }
 
-  debugPrint('Setting up providers...');
   runApp(const MyApp());
-  debugPrint('runApp() called.');
+}
+
+class FirebaseInitErrorScreen extends StatelessWidget {
+  const FirebaseInitErrorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              'Failed to connect to Firebase.\n\n'
+              'Check that google-services.json is placed in android/app/ and matches your app\'s package name.\n\n'
+              'Restart the app after fixing the file.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
