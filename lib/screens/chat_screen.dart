@@ -4,7 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
-import '../services/openrouter_service.dart';
+import '../services/ai_chat_service.dart';
 import '../services/voice_service.dart';
 import '../services/email_service.dart';
 import '../services/browser_service.dart';
@@ -25,7 +25,7 @@ import '../theme/aura_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class ChatScreen extends StatefulWidget {
-  final OpenRouterService aiService;
+  final AiChatService aiService;
   final VoiceService voice;
 
   const ChatScreen({super.key, required this.aiService, required this.voice});
@@ -69,21 +69,24 @@ class ChatScreenState extends State<ChatScreen> {
     }
     await memory.sendMessage(userDisplay, isUser: true);
 
-    List<String> history = memory.messages
-        .map((m) => m.isUser ? 'User: ${m.content}' : 'AI: ${m.content}')
+    List<Map<String, String>> history = memory.messages
+        .map((m) => {'role': m.isUser ? 'user' : 'assistant', 'content': m.content as String})
         .toList();
 
     setState(() => _isLoading = true);
 
     try {
       FileAttachment? file = attachments.isNotEmpty ? attachments.first : null;
-      final response = await widget.aiService.sendMessage(text, history);
+      final responseText = await widget.aiService.sendMessage(
+        userMessage: text, 
+        history: history
+      );
       
       await memory.sendMessage(
-        response.text, 
+        responseText, 
         isUser: false,
       );
-      widget.voice.speak(response.text);
+      widget.voice.speak(responseText);
 
 
     } catch (e) {

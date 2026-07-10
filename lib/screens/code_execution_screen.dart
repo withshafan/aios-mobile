@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/openrouter_service.dart';
+import '../services/ai_chat_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 
@@ -23,13 +23,12 @@ class _CodeExecutionScreenState extends State<CodeExecutionScreen> {
     // Use DeepSeek to predict the output (simulated execution)
     // We instantiate a temporary DeepSeekService just to get the response.
     // Assuming context.read gets the instances correctly.
-    final aiService = OpenRouterService(context.read<AnalyticsService>()); 
-    final response = await aiService.sendMessage(
-      'Execute the following code and return only the raw output (do not explain):\n```\n$code\n```',
-      null,
+    final aiService = context.read<AiChatService>(); 
+    final responseText = await aiService.sendMessage(
+      userMessage: 'Execute the following code and return only the raw output (do not explain):\n```\n$code\n```',
     );
     setState(() {
-      _output = response.text;
+      _output = responseText;
       _running = false;
     });
   }

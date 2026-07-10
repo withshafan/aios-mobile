@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/openrouter_service.dart';
+import '../services/ai_chat_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -29,18 +29,15 @@ class _ResearchScreenState extends State<ResearchScreen> {
       _progress = 'Researching...';
     });
 
-    final _aiService = OpenRouterService(
-      context.read<AnalyticsService>(),
-    );
+    final _aiService = context.read<AiChatService>();
 
     // Simulate 3 research cycles
     for (int i = 0; i < 3; i++) {
-      final response = await _aiService.sendMessage(
-        'Research about $topic. Give me key findings and sources.',
-        null,
+      final responseText = await _aiService.sendMessage(
+        userMessage: 'Research about $topic. Give me key findings and sources.',
       );
       setState(() {
-        _progress = response.text;
+        _progress = responseText;
         _sources.add('Source $i: example.com/$i');
       });
       await Future.delayed(const Duration(seconds: 5)); // simulate delay

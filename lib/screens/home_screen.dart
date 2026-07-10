@@ -5,7 +5,7 @@ import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
-import '../services/openrouter_service.dart';
+import '../services/ai_chat_service.dart';
 import '../services/voice_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
@@ -34,7 +34,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final OpenRouterService _aiService;
+  late final AiChatService _aiService;
   final VoiceService _voice = VoiceService();
   int _selectedIndex = 0;
   final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     final pluginService = context.read<PluginService>();
     final analyticsService = context.read<AnalyticsService>();
-    _aiService = OpenRouterService(analyticsService);
+    _aiService = context.read<AiChatService>();
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
   }

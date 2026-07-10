@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'openrouter_service.dart';
+import 'ai_chat_service.dart';
 import 'browser_service.dart';
 
 class TaskRunnerService extends ChangeNotifier {
-  final OpenRouterService _aiService;
+  final AiChatService _aiService;
   final BrowserService _browserService;
 
   bool _isRunning = false;
@@ -18,11 +18,10 @@ class TaskRunnerService extends ChangeNotifier {
     _status = 'Planning...';
     notifyListeners();
 
-    final planResponse = await _aiService.sendMessage(
-      'Break this goal into a step-by-step plan and then execute each step using available tools. Goal: $goal',
-      null,
+    final responseText = await _aiService.sendMessage(
+      userMessage: 'Break this goal into a step-by-step plan and then execute each step using available tools. Goal: $goal',
     );
-    _status = planResponse.text;
+    _status = responseText;
     
     // In a full implementation, we'd loop and let Gemini drive the browser/email tools.
     // For now we just record the initial plan/action.

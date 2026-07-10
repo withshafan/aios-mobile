@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'services/ai_chat_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import 'theme/aura_theme.dart';
 import 'services/auth_service.dart';
 import 'services/memory_service.dart';
 import 'services/task_service.dart';
+import 'services/task_runner_service.dart';
 import 'services/document_service.dart';
 import 'services/plugin_service.dart';
 import 'services/workflow_service.dart';
@@ -73,6 +75,13 @@ class MyApp extends StatelessWidget {
     debugPrint('Building MyApp...');
     return MultiProvider(
       providers: [
+        Provider(create: (_) {
+          debugPrint('Creating AiChatService...');
+          return AiChatService(
+            openRouterApiKey: 'YOUR_OPENROUTER_KEY',
+            huggingFaceApiToken: 'YOUR_HUGGINGFACE_KEY',
+          );
+        }),
         ChangeNotifierProvider(create: (_) {
           debugPrint('Creating AuthService...');
           return AuthService();
@@ -86,6 +95,10 @@ class MyApp extends StatelessWidget {
           debugPrint('Creating TaskService...');
           return TaskService();
         }),
+        ChangeNotifierProxyProvider2<AiChatService, BrowserService, TaskRunnerService>(
+          create: (ctx) => TaskRunnerService(ctx.read<AiChatService>(), ctx.read<BrowserService>()),
+          update: (ctx, ai, browser, previous) => previous ?? TaskRunnerService(ai, browser),
+        ),
         ChangeNotifierProxyProvider<TaskService, WorkflowService>(
           create: (ctx) {
             debugPrint('Creating WorkflowService...');
