@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import '../services/gemini_service.dart';
+import '../services/deepseek_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -30,11 +30,8 @@ class _ResearchMissionScreenState extends State<ResearchMissionScreen> {
       _progressLog = 'Starting $hours hour(s) research on "$topic"...\n';
     });
 
-    final gemini = GeminiService(
-      context.read<PluginService>(),
+    final deepseek = DeepSeekService(
       context.read<AnalyticsService>(),
-      context.read<SystemPromptService>(),
-      context.read<PlannerService>(),
     );
 
     final startTime = DateTime.now();
@@ -44,7 +41,7 @@ class _ResearchMissionScreenState extends State<ResearchMissionScreen> {
     while (DateTime.now().isBefore(endTime)) {
       cycle++;
       final prompt = 'Research cycle $cycle for "$topic". Provide new findings, sources, and key insights.';
-      final response = await gemini.sendMessage(prompt, null);
+      final response = await deepseek.sendMessage(prompt, null);
       setState(() {
         _progressLog += '--- Cycle $cycle ---\n${response.text}\n\n';
       });

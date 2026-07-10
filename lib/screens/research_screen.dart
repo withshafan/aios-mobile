@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/gemini_service.dart';
+import '../services/deepseek_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -29,14 +29,13 @@ class _ResearchScreenState extends State<ResearchScreen> {
       _progress = 'Researching...';
     });
 
-    final gemini = GeminiService(
-      context.read<PluginService>(),
+    final deepseek = DeepSeekService(
       context.read<AnalyticsService>(),
     );
 
     // Simulate 3 research cycles
     for (int i = 0; i < 3; i++) {
-      final response = await gemini.sendMessage(
+      final response = await deepseek.sendMessage(
         'Research about $topic. Give me key findings and sources.',
         null,
       );

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
-import '../services/gemini_service.dart';
+import '../services/deepseek_service.dart';
 import '../services/voice_service.dart';
 import '../services/email_service.dart';
 import '../services/browser_service.dart';
@@ -24,10 +24,10 @@ import '../theme/aura_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class ChatScreen extends StatefulWidget {
-  final GeminiService gemini;
+  final DeepSeekService deepseek;
   final VoiceService voice;
 
-  const ChatScreen({super.key, required this.gemini, required this.voice});
+  const ChatScreen({super.key, required this.deepseek, required this.voice});
 
   @override
   State<ChatScreen> createState() => ChatScreenState();
@@ -76,7 +76,7 @@ class ChatScreenState extends State<ChatScreen> {
 
     try {
       FileAttachment? file = attachments.isNotEmpty ? attachments.first : null;
-      final response = await widget.gemini.sendMessage(text, history);
+      final response = await widget.deepseek.sendMessage(text, history);
       
       await memory.sendMessage(
         response.text, 

@@ -5,7 +5,7 @@ import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
-import '../services/gemini_service.dart';
+import '../services/deepseek_service.dart';
 import '../services/voice_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
@@ -34,7 +34,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final GeminiService _gemini;
+  late final DeepSeekService _deepseek;
   final VoiceService _voice = VoiceService();
   int _selectedIndex = 0;
   final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     final pluginService = context.read<PluginService>();
     final analyticsService = context.read<AnalyticsService>();
-    _gemini = GeminiService(pluginService, analyticsService);
+    _deepseek = DeepSeekService(analyticsService);
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
   }
@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildScreen(int index) {
     switch (index) {
-      case 0: return ChatScreen(gemini: _gemini, voice: _voice, key: chatKey);
+      case 0: return ChatScreen(deepseek: _deepseek, voice: context.read<VoiceService>(), key: chatKey);
       case 1: return const DashboardScreen();
       case 2: return const TasksScreen();
       case 3: return const WorkflowScreen();

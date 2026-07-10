@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/gemini_service.dart';
+import '../services/deepseek_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 
@@ -20,11 +20,11 @@ class _CodeExecutionScreenState extends State<CodeExecutionScreen> {
     final code = _codeCtrl.text.trim();
     if (code.isEmpty) return;
     setState(() => _running = true);
-    // Use Gemini to predict the output (simulated execution)
-    // We instantiate a temporary GeminiService just to get the response.
+    // Use DeepSeek to predict the output (simulated execution)
+    // We instantiate a temporary DeepSeekService just to get the response.
     // Assuming context.read gets the instances correctly.
-    final gemini = context.read<GeminiService>(); 
-    final response = await gemini.sendMessage(
+    final deepseek = DeepSeekService(context.read<AnalyticsService>()); 
+    final response = await deepseek.sendMessage(
       'Execute the following code and return only the raw output (do not explain):\n```\n$code\n```',
       null,
     );
