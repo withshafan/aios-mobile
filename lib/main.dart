@@ -101,14 +101,12 @@ class MyApp extends StatelessWidget {
         Provider<CircuitBreakerService>(create: (_) => CircuitBreakerService()),
         Provider<WebhookService>(create: (_) => WebhookService()),
         Provider<CollaborationService>(create: (_) => CollaborationService()),
-        ProxyProvider4<PluginService, AnalyticsService, SystemPromptService, PlannerService, GeminiService>(
+        ProxyProvider2<PluginService, AnalyticsService, GeminiService>(
           create: (ctx) => GeminiService(
             ctx.read<PluginService>(),
             ctx.read<AnalyticsService>(),
-            ctx.read<SystemPromptService>(),
-            ctx.read<PlannerService>(),
           ),
-          update: (_, p, a, s, pl, prev) => prev ?? GeminiService(p, a, s, pl),
+          update: (_, p, a, prev) => prev ?? GeminiService(p, a),
         ),
         ChangeNotifierProxyProvider2<GeminiService, BrowserService, TaskRunnerService>(
           create: (ctx) => TaskRunnerService(ctx.read<GeminiService>(), ctx.read<BrowserService>()),

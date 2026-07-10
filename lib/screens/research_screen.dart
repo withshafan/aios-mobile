@@ -32,8 +32,6 @@ class _ResearchScreenState extends State<ResearchScreen> {
     final gemini = GeminiService(
       context.read<PluginService>(),
       context.read<AnalyticsService>(),
-      context.read<SystemPromptService>(),
-      context.read<PlannerService>(),
     );
 
     // Simulate 3 research cycles

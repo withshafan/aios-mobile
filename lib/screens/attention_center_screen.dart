@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/tokens.dart';
 import '../services/attention_service.dart';
-import '../models/attention_item.dart';
 import 'package:intl/intl.dart';
 
 class AttentionCenterScreen extends StatelessWidget {

@@ -75,13 +75,11 @@ class ChatScreenState extends State<ChatScreen> {
 
     try {
       FileAttachment? file = attachments.isNotEmpty ? attachments.first : null;
-      final response = await widget.gemini.sendMessageWithFile(text, history, file);
+      final response = await widget.gemini.sendMessage(text, history);
       
       await memory.sendMessage(
         response.text, 
         isUser: false,
-        imageUrl: response.imageUrl,
-        sources: response.sources,
       );
       widget.voice.speak(response.text);
 

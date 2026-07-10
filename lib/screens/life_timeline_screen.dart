@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../theme/tokens.dart';
 import '../services/life_timeline_service.dart';
-import '../models/life_timeline.dart';
 
 class LifeTimelineScreen extends StatelessWidget {
   const LifeTimelineScreen({super.key});

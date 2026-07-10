@@ -1,15 +1,21 @@
 import 'package:googleapis/calendar/v3.dart' as cal;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
+import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
+import 'package:http/http.dart' as http;
 import 'audit_service.dart';
 
 class CalendarService {
   /// Get authenticated CalendarApi client using the signed-in Google account
   Future<cal.CalendarApi?> getCalendarApi(GoogleSignInAccount googleUser) async {
-    final authClient = await googleUser.authenticatedClient(
-      scopes: ['https://www.googleapis.com/auth/calendar.events'],
+    final auth = await googleUser.authentication;
+    final token = auth.accessToken;
+    if (token == null) return null;
+    final credentials = gapis.AccessCredentials(
+      gapis.AccessToken('Bearer', token, DateTime.now().toUtc().add(const Duration(days: 365))),
+      null,
+      ['https://www.googleapis.com/auth/calendar.events'],
     );
-    if (authClient == null) return null;
+    final authClient = gapis.authenticatedClient(http.Client(), credentials);
     return cal.CalendarApi(authClient);
   }
 
