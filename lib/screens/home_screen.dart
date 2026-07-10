@@ -9,6 +9,7 @@ import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'tasks_screen.dart';
+import 'android_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     context.read<MemoryService>().loadMessages();
-    // TaskService is already listening because we provided it in main
   }
 
   @override
@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ChatScreen(gemini: _gemini, voice: _voice),
       const TasksScreen(),
       const MemoryScreen(),
+      const AndroidScreen(),
       const SettingsScreen(),
     ];
 
@@ -50,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.task_alt), label: 'Tasks'),
           NavigationDestination(icon: Icon(Icons.memory), label: 'Memory'),
+          NavigationDestination(icon: Icon(Icons.phone_android), label: 'Android'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
