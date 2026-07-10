@@ -56,11 +56,14 @@ import 'llm_providers_screen.dart';
 import 'agent_team_screen.dart';
 import 'self_programming_screen.dart';
 import 'ai_os_kernel_dashboard.dart';
-
 import 'governance/action_tiers_screen.dart';
 import 'governance/audit_log_screen.dart';
 import 'governance/system_health_screen.dart';
 import 'governance/memory_integrity_screen.dart';
+import 'code_execution_screen.dart';
+import 'autonomous_runner_screen.dart';
+import 'webhook_management_screen.dart';
+import 'shared_projects_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -324,6 +327,43 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const MemoryIntegrityScreen()));
+              },
+            ),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text('Modern Agent Capabilities', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('Code Sandbox'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const CodeExecutionScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.smart_toy),
+              title: const Text('Autonomous Runner'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AutonomousRunnerScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.webhook),
+              title: const Text('Webhook Triggers'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const WebhookManagementScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_work),
+              title: const Text('Shared Workspaces'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SharedProjectsScreen()));
               },
             ),
             const Divider(),

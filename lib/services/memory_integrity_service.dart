@@ -47,4 +47,20 @@ class MemoryIntegrityService {
     }
     await batch.commit();
   }
+
+  Future<void> forgetAbout(String keyword) async {
+    final snaps = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('chats')
+        .get();
+    final batch = _db.batch();
+    for (var doc in snaps.docs) {
+      final content = doc.data()['content'].toString().toLowerCase();
+      if (content.contains(keyword.toLowerCase())) {
+        batch.delete(doc.reference);
+      }
+    }
+    await batch.commit();
+  }
 }

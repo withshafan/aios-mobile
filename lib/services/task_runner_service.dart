@@ -1,0 +1,33 @@
+import 'package:flutter/foundation.dart';
+import 'gemini_service.dart';
+import 'browser_service.dart';
+
+class TaskRunnerService extends ChangeNotifier {
+  final GeminiService _gemini;
+  final BrowserService _browserService;
+
+  bool _isRunning = false;
+  bool get isRunning => _isRunning;
+  String _status = '';
+  String get status => _status;
+
+  TaskRunnerService(this._gemini, this._browserService);
+
+  Future<void> executeGoal(String goal) async {
+    _isRunning = true;
+    _status = 'Planning...';
+    notifyListeners();
+
+    final planResponse = await _gemini.sendMessage(
+      'Break this goal into a step-by-step plan and then execute each step using available tools. Goal: $goal',
+      null,
+    );
+    _status = planResponse.text;
+    
+    // In a full implementation, we'd loop and let Gemini drive the browser/email tools.
+    // For now we just record the initial plan/action.
+    
+    _isRunning = false;
+    notifyListeners();
+  }
+}

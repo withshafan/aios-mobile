@@ -71,7 +71,12 @@ class ChatScreenState extends State<ChatScreen> {
       FileAttachment? file = attachments.isNotEmpty ? attachments.first : null;
       final response = await widget.gemini.sendMessageWithFile(text, history, file);
       
-      await memory.sendMessage(response.text, isUser: false);
+      await memory.sendMessage(
+        response.text, 
+        isUser: false,
+        imageUrl: response.imageUrl,
+        sources: response.sources,
+      );
       widget.voice.speak(response.text);
 
       if (response.taskToCreate != null) {
@@ -319,9 +324,35 @@ class ChatScreenState extends State<ChatScreen> {
             bottomRight: Radius.circular(isUser ? 4 : 16),
           ),
         ),
-        child: Text(
-          message.content,
-          style: const TextStyle(fontSize: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (message.imageUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Image.network(message.imageUrl!),
+              ),
+            Text(
+              message.content,
+              style: const TextStyle(fontSize: 16),
+            ),
+            if (message.sources != null && message.sources!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 14, color: Colors.white70),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Sources: ${message.sources!.join(", ")}',
+                        style: const TextStyle(fontSize: 12, color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );

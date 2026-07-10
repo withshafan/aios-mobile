@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import '../models/file_attachment.dart';
 import 'file_ingestion_service.dart';
+import 'web_search_service.dart';
+import 'image_generation_service.dart';
 import 'plugin_service.dart';
 import 'analytics_service.dart';
 import 'system_prompt_service.dart';
@@ -82,6 +84,22 @@ class GeminiService {
     }, required: ['title', 'format', 'content']),
   );
 
+  static const _searchWebFunction = FunctionDeclaration(
+    'search_web',
+    'Search the web for current information',
+    Schema(SchemaType.object, properties: {
+      'query': Schema(SchemaType.string, description: 'The search query'),
+    }, required: ['query']),
+  );
+
+  static const _generateImageFunction = FunctionDeclaration(
+    'generate_image',
+    'Generate an image based on a prompt',
+    Schema(SchemaType.object, properties: {
+      'prompt': Schema(SchemaType.string, description: 'Image description prompt'),
+    }, required: ['prompt']),
+  );
+
   GeminiService(this._pluginService, this._analyticsService, this._systemPromptService, this._plannerService);
 
   List<Tool> _buildTools() {
@@ -93,6 +111,8 @@ class GeminiService {
       _addPlanStepFunction,
       _completePlanStepFunction,
       _generateDocFunction,
+      _searchWebFunction,
+      _generateImageFunction,
     ];
 
     for (var plugin in _pluginService.plugins) {
@@ -419,6 +439,8 @@ class ChatResponse {
   final CalendarEventCommand? calendarEvent;
   final PlannerAction? plannerAction;
   final DocumentGeneration? generateDocument;
+  final String? imageUrl;
+  final List<String>? sources;
 
   ChatResponse({
     required this.text,
@@ -429,6 +451,8 @@ class ChatResponse {
     this.calendarEvent,
     this.plannerAction,
     this.generateDocument,
+    this.imageUrl,
+    this.sources,
   });
 }
 

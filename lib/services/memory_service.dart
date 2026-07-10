@@ -25,12 +25,14 @@ class MemoryService extends ChangeNotifier {
     });
   }
 
-  Future<void> sendMessage(String content, {bool isUser = true, String? audioUrl}) async {
+  Future<void> sendMessage(String content, {bool isUser = true, String? audioUrl, String? imageUrl, List<String>? sources}) async {
     final message = ChatMessage(
       id: '',
       content: content,
       isUser: isUser,
       timestamp: DateTime.now(),
+      imageUrl: imageUrl,
+      sources: sources,
     );
     await _firestore
         .collection('users')

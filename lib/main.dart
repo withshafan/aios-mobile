@@ -31,6 +31,10 @@ import 'services/agent_team_service.dart';
 import 'services/self_programming_service.dart';
 import 'services/audit_service.dart';
 import 'services/circuit_breaker_service.dart';
+import 'services/webhook_service.dart';
+import 'services/collaboration_service.dart';
+import 'services/task_runner_service.dart';
+import 'services/gemini_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -80,6 +84,21 @@ class MyApp extends StatelessWidget {
         Provider<SelfProgrammingService>(create: (_) => SelfProgrammingService()),
         Provider<AuditService>(create: (_) => AuditService()),
         Provider<CircuitBreakerService>(create: (_) => CircuitBreakerService()),
+        Provider<WebhookService>(create: (_) => WebhookService()),
+        Provider<CollaborationService>(create: (_) => CollaborationService()),
+        ProxyProvider4<PluginService, AnalyticsService, SystemPromptService, PlannerService, GeminiService>(
+          create: (ctx) => GeminiService(
+            ctx.read<PluginService>(),
+            ctx.read<AnalyticsService>(),
+            ctx.read<SystemPromptService>(),
+            ctx.read<PlannerService>(),
+          ),
+          update: (_, p, a, s, pl, prev) => prev ?? GeminiService(p, a, s, pl),
+        ),
+        ChangeNotifierProxyProvider2<GeminiService, BrowserService, TaskRunnerService>(
+          create: (ctx) => TaskRunnerService(ctx.read<GeminiService>(), ctx.read<BrowserService>()),
+          update: (_, g, b, prev) => prev ?? TaskRunnerService(g, b),
+        ),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',

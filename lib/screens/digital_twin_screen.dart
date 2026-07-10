@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/digital_twin_service.dart';
+import '../services/memory_integrity_service.dart';
 
 class DigitalTwinScreen extends StatefulWidget {
   const DigitalTwinScreen({super.key});
@@ -44,6 +46,36 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
                   });
                 },
                 child: const Text('Update Working Hours (Demo)'),
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const Text('Memory Controls', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  final keywordCtrl = TextEditingController();
+                  final result = await showDialog<String>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Forget Memory'),
+                      content: TextField(
+                        controller: keywordCtrl,
+                        decoration: const InputDecoration(labelText: 'Keyword to forget'),
+                      ),
+                      actions: [
+                        TextButton(child: const Text('Cancel'), onPressed: () => Navigator.pop(ctx)),
+                        TextButton(child: const Text('Forget'), onPressed: () => Navigator.pop(ctx, keywordCtrl.text)),
+                      ],
+                    ),
+                  );
+                  if (result != null && result.isNotEmpty) {
+                    final integrityService = context.read<MemoryIntegrityService>();
+                    await integrityService.forgetAbout(result);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Forgot memories about "$result"')));
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                child: const Text('Forget about...'),
               ),
             ],
           );
