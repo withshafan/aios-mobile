@@ -28,6 +28,12 @@ import 'calendar_screen.dart';
 import 'analytics_screen.dart';
 import 'more_screen.dart';
 import 'dashboard_screen.dart';
+import 'command_palette.dart';
+import 'package:flutter/services.dart';
+
+class _OpenCommandPaletteIntent extends Intent {
+  const _OpenCommandPaletteIntent();
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -93,6 +99,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _openCommandPalette() {
+    showDialog(
+      context: context,
+      builder: (_) => const Center(
+        child: SingleChildScrollView(
+          child: CommandPalette(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ResponsiveBuilder(builder: (context, deviceType) {
@@ -109,9 +126,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- Phone ---
   Widget _buildPhoneLayout() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(_navItems[_selectedNavIndex].label),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _openCommandPalette,
+          ),
           IconButton(
             icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
             onPressed: () {
@@ -141,9 +163,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- Tablet ---
   Widget _buildTabletLayout() {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(_navItems[_selectedNavIndex].label),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _openCommandPalette,
+          ),
           IconButton(
             icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
             onPressed: () {
@@ -178,45 +205,65 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- Desktop ---
   Widget _buildDesktopLayout() {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_navItems[_selectedNavIndex].label),
-        actions: [
-          IconButton(
-            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
-            onPressed: () {
-              if (context.read<VoiceService>().wakeWordActive) {
-                context.read<VoiceService>().stopWakeWordListening();
-              } else {
-                context.read<VoiceService>().startWakeWordListening();
-              }
+    return Shortcuts(
+      shortcuts: <LogicalKeySet, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyK): const _OpenCommandPaletteIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _OpenCommandPaletteIntent: CallbackAction<_OpenCommandPaletteIntent>(
+            onInvoke: (_) {
+              _openCommandPalette();
+              return null;
             },
           ),
-        ],
-      ),
-      body: Row(
-        children: [
-          SizedBox(
-            width: 260,
-            child: Material(
-              color: Theme.of(context).extension<AuraTheme>()!.surfaceBase,
-              child: ListView(
-                children: _navItems.map((item) {
-                  final i = _navItems.indexOf(item);
-                  return ListTile(
-                    leading: Icon(item.icon),
-                    title: Text(item.label),
-                    selected: i == _selectedNavIndex,
-                    selectedTileColor: AppColors.accentViolet.withOpacity(0.2),
-                    onTap: () => setState(() => _selectedNavIndex = i),
-                  );
-                }).toList(),
+        },
+        child: Scaffold(
+          key: _scaffoldKey,
+          appBar: AppBar(
+            title: Text(_navItems[_selectedNavIndex].label),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: _openCommandPalette,
               ),
-            ),
+              IconButton(
+                icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
+                onPressed: () {
+                  if (context.read<VoiceService>().wakeWordActive) {
+                    context.read<VoiceService>().stopWakeWordListening();
+                  } else {
+                    context.read<VoiceService>().startWakeWordListening();
+                  }
+                },
+              ),
+            ],
           ),
-          const VerticalDivider(width: 1),
-          Expanded(child: _buildScreen(_selectedNavIndex)),
-        ],
+          body: Row(
+            children: [
+              SizedBox(
+                width: 260,
+                child: Material(
+                  color: Theme.of(context).extension<AuraTheme>()?.surfaceBase ?? Colors.black87,
+                  child: ListView(
+                    children: _navItems.map((item) {
+                      final i = _navItems.indexOf(item);
+                      return ListTile(
+                        leading: Icon(item.icon),
+                        title: Text(item.label),
+                        selected: i == _selectedNavIndex,
+                        selectedTileColor: AppColors.accentViolet.withOpacity(0.2),
+                        onTap: () => _onNavChanged(i),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: _buildScreen(_selectedNavIndex)),
+            ],
+          ),
+        ),
       ),
     );
   }

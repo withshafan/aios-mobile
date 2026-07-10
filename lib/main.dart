@@ -35,11 +35,17 @@ import 'services/audit_service.dart';
 import 'services/circuit_breaker_service.dart';
 import 'services/webhook_service.dart';
 import 'services/collaboration_service.dart';
+import 'services/audit_service.dart';
+import 'services/circuit_breaker_service.dart';
+import 'services/webhook_service.dart';
+import 'services/collaboration_service.dart';
 import 'services/task_runner_service.dart';
 import 'services/gemini_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,6 +132,22 @@ class MyApp extends StatelessWidget {
               fontSizeFactor: MediaQuery.textScalerOf(context).scale(1.0),
             ),
           ),
+          navigatorKey: navigatorKey,
+          initialRoute: '/',
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/':
+                return MaterialPageRoute(builder: (_) => const AuthGate());
+              case '/home':
+                return MaterialPageRoute(builder: (_) => const HomeScreen());
+              case '/chat':
+                return MaterialPageRoute(builder: (_) => const HomeScreen());
+              case '/dashboard':
+                return MaterialPageRoute(builder: (_) => const HomeScreen());
+              default:
+                return MaterialPageRoute(builder: (_) => const HomeScreen());
+            }
+          },
           home: const AuthGate(),
         ),
       ),
