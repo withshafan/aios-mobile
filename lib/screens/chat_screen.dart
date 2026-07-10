@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
@@ -291,6 +292,32 @@ class ChatScreenState extends State<ChatScreen> {
                         padding: const EdgeInsets.only(top: space1),
                         child: Text(timeStr, style: TextStyle(color: theme.textDisabled, fontSize: 11)),
                       ),
+                    const SizedBox(height: space2),
+                    Row(
+                      children: [
+                        _actionButton(Icons.copy, 'Copy', () {
+                          Clipboard.setData(ClipboardData(text: content));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)),
+                          );
+                        }),
+                        const SizedBox(width: space1),
+                        _actionButton(Icons.refresh, 'Retry', () {
+                          final messages = context.read<MemoryService>().messages;
+                          if (messages.isNotEmpty) {
+                            final lastUser = messages.where((m) => m.isUser).lastOrNull;
+                            if (lastUser != null) {
+                              _controller.text = lastUser.content;
+                              _sendMessage();
+                            }
+                          }
+                        }),
+                        const SizedBox(width: space1),
+                        _actionButton(Icons.share, 'Share', () {
+                          Share.share(content, subject: 'AURA AIOS reply');
+                        }),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -311,6 +338,27 @@ class ChatScreenState extends State<ChatScreen> {
         );
       },
       child: bubble,
+    );
+  }
+
+  Widget _actionButton(IconData icon, String label, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: space2, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceOverlay,
+          borderRadius: BorderRadius.circular(radiusSm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppColors.textSecondary),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          ],
+        ),
+      ),
     );
   }
 

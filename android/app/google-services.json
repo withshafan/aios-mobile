@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "423033937653",
+    "firebase_url": "https://aios-mobile-default-rtdb.firebaseio.com",
     "project_id": "aios-mobile",
     "storage_bucket": "aios-mobile.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.shafan.aios_mobile"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "423033937653-nle5kk2a5i7pbjq004i1bapaudksdqno.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shafan.aios_mobile",
+            "certificate_hash": "f4fbff88bb793d2bd23698249e4b51173b515772"
+          }
+        },
+        {
+          "client_id": "423033937653-7ehsdc763cn9ds38gnogsole6mlu4j9v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB587GZN4mqy1qI-y_Vt1b-40B5HuF5GFk"
@@ -20,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "423033937653-7ehsdc763cn9ds38gnogsole6mlu4j9v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
