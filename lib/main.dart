@@ -11,6 +11,7 @@ import 'services/browser_service.dart';
 import 'services/analytics_service.dart';
 import 'services/system_prompt_service.dart';
 import 'services/planner_service.dart';
+import 'services/goal_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AnalyticsService()),
         ChangeNotifierProvider(create: (_) => SystemPromptService()),
         ChangeNotifierProvider(create: (_) => PlannerService()),
+        ChangeNotifierProvider(create: (_) => GoalService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',
