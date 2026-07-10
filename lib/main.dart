@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'theme/tokens.dart';
+import 'theme/aura_theme.dart';
 import 'services/auth_service.dart';
 import 'services/memory_service.dart';
 import 'services/task_service.dart';
@@ -102,12 +104,23 @@ class MyApp extends StatelessWidget {
       ],
       child: Builder(
         builder: (context) => MaterialApp(
-          title: 'AIOS Mobile',
+          title: 'AURA AIOS',
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.dark,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: AppColors.bgCanvas,
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.accentViolet,
+              secondary: AppColors.accentCyan,
+              surface: AppColors.surfaceBase,
+              error: AppColors.accentCritical,
             ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: AppColors.surfaceBase,
+              foregroundColor: AppColors.textPrimary,
+              elevation: 0,
+            ),
+            extensions: [AuraTheme.dark()],
             useMaterial3: true,
             textTheme: Theme.of(context).textTheme.apply(
               fontSizeFactor: MediaQuery.textScalerOf(context).scale(1.0),

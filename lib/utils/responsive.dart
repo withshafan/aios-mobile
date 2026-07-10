@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
-enum DeviceType { phone, tablet, desktop }
+import '../theme/tokens.dart';
 
 DeviceType getDeviceType(BuildContext context) {
   final width = MediaQuery.of(context).size.width;
-  if (width < 600) return DeviceType.phone;
-  if (width < 900) return DeviceType.tablet;
+  if (width < breakpointPhone) return DeviceType.phone;
+  if (width < breakpointTablet) return DeviceType.tablet;
   return DeviceType.desktop;
 }
 
