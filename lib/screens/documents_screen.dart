@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/gemini_service.dart';
 import '../services/document_service.dart';
+import '../services/plugin_service.dart';
+import '../services/analytics_service.dart';
 import 'package:intl/intl.dart';
 
 class DocumentsScreen extends StatefulWidget {
@@ -13,10 +15,16 @@ class DocumentsScreen extends StatefulWidget {
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
   final TextEditingController _promptController = TextEditingController();
-  final GeminiService _gemini = GeminiService();
+  late final GeminiService _gemini;
   String _generatedContent = '';
   String _title = '';
   bool _isGenerating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _gemini = GeminiService(context.read<PluginService>(), context.read<AnalyticsService>());
+  }
 
   Future<void> _generate() async {
     final topic = _promptController.text.trim();

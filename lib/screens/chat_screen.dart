@@ -5,6 +5,7 @@ import '../services/task_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../services/email_service.dart';
+import '../services/browser_service.dart';
 import 'dart:io';
 import '../services/circuit_breaker_service.dart';
 import 'package:file_picker/file_picker.dart';

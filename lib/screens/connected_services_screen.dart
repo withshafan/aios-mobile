@@ -24,7 +24,7 @@ class ConnectedServicesScreen extends StatelessWidget {
                 color: AppColors.surfaceRaised,
                 margin: const EdgeInsets.only(bottom: space3),
                 child: ListTile(
-                  leading: Icon(_getIcon(service.icon), color: AppColors.accentViolet),
+                  leading: _getIcon(service.icon),
                   title: Text(service.name),
                   subtitle: Text(service.isConnected ? 'Connected' : 'Tap to connect'),
                   trailing: Switch(
@@ -51,12 +51,12 @@ class ConnectedServicesScreen extends StatelessWidget {
 
   Widget _getIcon(String iconName) {
     switch (iconName) {
-      case 'cloud': return const Icon(Icons.cloud);
-      case 'code': return const Icon(Icons.code);
-      case 'email': return const Icon(Icons.email);
-      case 'description': return const Icon(Icons.description);
-      case 'chat': return const Icon(Icons.chat);
-      default: return const Icon(Icons.link);
+      case 'cloud': return const Icon(Icons.cloud, color: AppColors.accentViolet);
+      case 'code': return const Icon(Icons.code, color: AppColors.accentViolet);
+      case 'email': return const Icon(Icons.email, color: AppColors.accentViolet);
+      case 'description': return const Icon(Icons.description, color: AppColors.accentViolet);
+      case 'chat': return const Icon(Icons.chat, color: AppColors.accentViolet);
+      default: return const Icon(Icons.link, color: AppColors.accentViolet);
     }
   }
 }

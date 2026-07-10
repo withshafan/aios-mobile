@@ -107,7 +107,7 @@ class PluginService extends ChangeNotifier {
         final expr = args?['expression'] as String? ?? '';
         try {
           final parsed = Parser().parse(expr);
-          final result = ContextModel().evaluate(parsed);
+          final result = parsed.evaluate(EvaluationType.REAL, ContextModel());
           return 'Result: $result';
         } catch (e) {
           return 'Invalid expression.';

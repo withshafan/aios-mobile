@@ -90,7 +90,6 @@ class TaskService extends ChangeNotifier {
         task.description ?? 'Your task is due!',
         scheduledDate,
         details,
-        androidAllowWhileIdle: true,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
     }

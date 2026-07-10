@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../theme/tokens.dart';
-import '../theme/aura_theme.dart';
 import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 import '../services/memory_service.dart';
@@ -12,8 +10,6 @@ import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/browser_service.dart';
 import '../services/analytics_service.dart';
-import '../services/system_prompt_service.dart';
-import '../services/planner_service.dart';
 import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
@@ -28,12 +24,6 @@ import 'calendar_screen.dart';
 import 'analytics_screen.dart';
 import 'more_screen.dart';
 import 'dashboard_screen.dart';
-import 'command_palette.dart';
-import 'package:flutter/services.dart';
-
-class _OpenCommandPaletteIntent extends Intent {
-  const _OpenCommandPaletteIntent();
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,10 +35,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final GeminiService _gemini;
   final VoiceService _voice = VoiceService();
-  int _selectedNavIndex = 0;
+  int _selectedIndex = 0;
   final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
 
-  // The five main navigation items (Chat, Dashboard, Workspace, Automation, More)
   final List<_NavDestination> _navItems = const [
     _NavDestination('Chat', Icons.chat),
     _NavDestination('Dashboard', Icons.dashboard),
@@ -62,9 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     final pluginService = context.read<PluginService>();
     final analyticsService = context.read<AnalyticsService>();
-    final systemPromptService = context.read<SystemPromptService>();
-    final plannerService = context.read<PlannerService>();
-    _gemini = GeminiService(pluginService, analyticsService, systemPromptService, plannerService);
+    _gemini = GeminiService(pluginService, analyticsService);
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
   }
@@ -72,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _setupWakeWord() {
     _voice.onWakeWordDetected = () async {
       if (!mounted) return;
-      setState(() => _selectedNavIndex = 0); // Chat
+      setState(() => _selectedIndex = 0);
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       final spoken = await _voice.listen(timeout: const Duration(seconds: 7));
@@ -84,30 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildScreen(int index) {
     switch (index) {
-      case 0:
-        return ChatScreen(gemini: _gemini, voice: _voice, key: chatKey);
-      case 1:
-        return const DashboardScreen();
-      case 2:
-        return const TasksScreen(); // Workspace defaults to Tasks
-      case 3:
-        return const WorkflowScreen(); // Automation defaults to Workflows
-      case 4:
-        return const MoreScreen();
-      default:
-        return const SettingsScreen();
+      case 0: return ChatScreen(gemini: _gemini, voice: _voice, key: chatKey);
+      case 1: return const DashboardScreen();
+      case 2: return const TasksScreen();
+      case 3: return const WorkflowScreen();
+      case 4: return const MoreScreen();
+      default: return const SettingsScreen();
     }
-  }
-
-  void _openCommandPalette() {
-    showDialog(
-      context: context,
-      builder: (_) => const Center(
-        child: SingleChildScrollView(
-          child: CommandPalette(),
-        ),
-      ),
-    );
   }
 
   @override
@@ -117,23 +87,16 @@ class _HomeScreenState extends State<HomeScreen> {
         return _buildDesktopLayout();
       } else if (deviceType == DeviceType.tablet) {
         return _buildTabletLayout();
-      } else {
-        return _buildPhoneLayout();
       }
+      return _buildPhoneLayout();
     });
   }
 
-  // --- Phone ---
   Widget _buildPhoneLayout() {
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(_navItems[_selectedNavIndex].label),
+        title: Text(_navItems[_selectedIndex].label),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _openCommandPalette,
-          ),
           IconButton(
             icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
             onPressed: () {
@@ -146,31 +109,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _buildScreen(_selectedNavIndex),
+      body: _buildScreen(_selectedIndex),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedNavIndex,
-        onDestinationSelected: (i) => setState(() => _selectedNavIndex = i),
-        destinations: _navItems.map((item) {
-          return NavigationDestination(
-            icon: Icon(item.icon),
-            label: item.label,
-          );
-        }).toList(),
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        destinations: _navItems.map((item) =>
+          NavigationDestination(icon: Icon(item.icon), label: item.label),
+        ).toList(),
       ),
     );
   }
 
-  // --- Tablet ---
   Widget _buildTabletLayout() {
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(_navItems[_selectedNavIndex].label),
+        title: Text(_navItems[_selectedIndex].label),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _openCommandPalette,
-          ),
           IconButton(
             icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
             onPressed: () {
@@ -186,84 +140,60 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Row(
         children: [
           NavigationRail(
-            selectedIndex: _selectedNavIndex,
-            onDestinationSelected: (i) => setState(() => _selectedNavIndex = i),
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (i) => setState(() => _selectedIndex = i),
             labelType: NavigationRailLabelType.all,
-            destinations: _navItems.map((item) {
-              return NavigationRailDestination(
-                icon: Icon(item.icon),
-                label: Text(item.label),
-              );
-            }).toList(),
+            destinations: _navItems.map((item) =>
+              NavigationRailDestination(icon: Icon(item.icon), label: Text(item.label)),
+            ).toList(),
           ),
           const VerticalDivider(width: 1),
-          Expanded(child: _buildScreen(_selectedNavIndex)),
+          Expanded(child: _buildScreen(_selectedIndex)),
         ],
       ),
     );
   }
 
-  // --- Desktop ---
   Widget _buildDesktopLayout() {
-    return Shortcuts(
-      shortcuts: <LogicalKeySet, Intent>{
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyK): const _OpenCommandPaletteIntent(),
-      },
-      child: Actions(
-        actions: <Type, Action<Intent>>{
-          _OpenCommandPaletteIntent: CallbackAction<_OpenCommandPaletteIntent>(
-            onInvoke: (_) {
-              _openCommandPalette();
-              return null;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_navItems[_selectedIndex].label),
+        actions: [
+          IconButton(
+            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
+            onPressed: () {
+              if (context.read<VoiceService>().wakeWordActive) {
+                context.read<VoiceService>().stopWakeWordListening();
+              } else {
+                context.read<VoiceService>().startWakeWordListening();
+              }
             },
           ),
-        },
-        child: Scaffold(
-          key: _scaffoldKey,
-          appBar: AppBar(
-            title: Text(_navItems[_selectedNavIndex].label),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: _openCommandPalette,
+        ],
+      ),
+      body: Row(
+        children: [
+          SizedBox(
+            width: 260,
+            child: Material(
+              color: AppColors.surfaceBase,
+              child: ListView(
+                children: _navItems.map((item) {
+                  final i = _navItems.indexOf(item);
+                  return ListTile(
+                    leading: Icon(item.icon),
+                    title: Text(item.label),
+                    selected: i == _selectedIndex,
+                    selectedTileColor: AppColors.accentViolet.withOpacity(0.2),
+                    onTap: () => setState(() => _selectedIndex = i),
+                  );
+                }).toList(),
               ),
-              IconButton(
-                icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
-                onPressed: () {
-                  if (context.read<VoiceService>().wakeWordActive) {
-                    context.read<VoiceService>().stopWakeWordListening();
-                  } else {
-                    context.read<VoiceService>().startWakeWordListening();
-                  }
-                },
-              ),
-            ],
+            ),
           ),
-          body: Row(
-            children: [
-              SizedBox(
-                width: 260,
-                child: Material(
-                  color: Theme.of(context).extension<AuraTheme>()?.surfaceBase ?? Colors.black87,
-                  child: ListView(
-                    children: _navItems.map((item) {
-                      final i = _navItems.indexOf(item);
-                      return ListTile(
-                        leading: Icon(item.icon),
-                        title: Text(item.label),
-                        selected: i == _selectedNavIndex,
-                        selectedTileColor: AppColors.accentViolet.withOpacity(0.2),
-                        onTap: () => _onNavChanged(i),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const VerticalDivider(width: 1),
-              Expanded(child: _buildScreen(_selectedNavIndex)),
-            ],
-          ),
-        ),
+          const VerticalDivider(width: 1),
+          Expanded(child: _buildScreen(_selectedIndex)),
+        ],
       ),
     );
   }

@@ -6,7 +6,10 @@ import 'audit_service.dart';
 class CalendarService {
   /// Get authenticated CalendarApi client using the signed-in Google account
   Future<cal.CalendarApi?> getCalendarApi(GoogleSignInAccount googleUser) async {
-    final authClient = await googleUser.authenticatedClient();
+    final authClient = await googleUser.authenticatedClient(
+      scopes: ['https://www.googleapis.com/auth/calendar.events'],
+    );
+    if (authClient == null) return null;
     return cal.CalendarApi(authClient);
   }
 

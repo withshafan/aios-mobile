@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:graphview/GraphView.dart';
+import 'package:graphview/forcedirected/FruchtermanReingoldAlgorithm.dart';
+import 'package:graphview/forcedirected/FruchtermanReingoldConfiguration.dart';
 import '../theme/tokens.dart';
 import '../services/memory_service.dart';
 
@@ -20,7 +22,9 @@ class _KnowledgeGraphScreenState extends State<KnowledgeGraphScreen> {
   void initState() {
     super.initState();
     graph = Graph()..isTree = false;
-    algorithm = FruchtermanReingoldAlgorithm();
+    algorithm = FruchtermanReingoldAlgorithm(
+      FruchtermanReingoldConfiguration(),
+    );
   }
 
   void _buildGraph(List<String> messages) {
