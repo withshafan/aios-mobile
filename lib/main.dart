@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/memory_service.dart';
 import 'services/task_service.dart';
+import 'services/document_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => MemoryService()),
         ChangeNotifierProvider(create: (_) => TaskService()),
+        ChangeNotifierProvider(create: (_) => DocumentService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',

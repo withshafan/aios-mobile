@@ -26,6 +26,9 @@ dependencies:
   path_provider: ^2.1.4
   file_picker: ^8.1.4
   permission_handler: ^11.3.1
+  pdf: ^3.11.0
+  docx: ^1.0.0
+  open_file: ^3.5.0
 
 dev_dependencies:
   flutter_test:
