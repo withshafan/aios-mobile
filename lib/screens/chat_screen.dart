@@ -4,6 +4,7 @@ import '../services/memory_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../models/chat_message.dart';
+import '../services/task_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final GeminiService gemini;
@@ -33,7 +34,6 @@ class _ChatScreenState extends State<ChatScreen> {
     final memory = context.read<MemoryService>();
     await memory.sendMessage(text, isUser: true);
 
-    // Get conversation history for context
     List<String> history = memory.messages
         .map((m) => m.isUser ? 'User: ${m.content}' : 'AI: ${m.content}')
         .toList();
@@ -41,9 +41,25 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoading = true);
 
     try {
-      String response = await widget.gemini.generateResponse(text, history);
-      await memory.sendMessage(response, isUser: false);
-      widget.voice.speak(response); // speak response
+      final response = await widget.gemini.sendMessage(text, history);
+      
+      // Save AI response to memory
+      await memory.sendMessage(response.text, isUser: false);
+      widget.voice.speak(response.text);
+
+      // If the AI wants to create a task, do it now
+      if (response.taskToCreate != null) {
+        final cmd = response.taskToCreate!;
+        await context.read<TaskService>().createFromCommand(
+          cmd.title,
+          cmd.dueDate,
+          cmd.description,
+        );
+        // Tell user it was saved
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Task "${cmd.title}" created!')),
+        );
+      }
     } catch (e) {
       await memory.sendMessage('Sorry, something went wrong.', isUser: false);
     } finally {
