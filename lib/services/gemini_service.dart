@@ -35,6 +35,17 @@ class GeminiService {
     }, required: ['url']),
   );
 
+  static const _createCalendarEventFunction = FunctionDeclaration(
+    'create_calendar_event',
+    'Create a Google Calendar event',
+    Schema(SchemaType.object, properties: {
+      'summary': Schema(SchemaType.string, description: 'Event title'),
+      'start': Schema(SchemaType.string, description: 'Start date/time in ISO 8601 format (e.g. 2026-07-11T09:00:00)'),
+      'end': Schema(SchemaType.string, description: 'End date/time in ISO 8601 format'),
+      'description': Schema(SchemaType.string, description: 'Optional description'),
+    }, required: ['summary', 'start', 'end']),
+  );
+
   GeminiService(this._pluginService) {
     _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey);
   }
@@ -44,6 +55,7 @@ class GeminiService {
       _createTaskFunction,
       _sendEmailFunction,
       _openWebsiteFunction,
+      _createCalendarEventFunction,
     ];
 
     for (var plugin in _pluginService.plugins) {
@@ -114,8 +126,18 @@ class GeminiService {
           text: response.text ?? "Opening ${args['url']}.",
           browserUrl: args['url'] as String,
         );
+      } else if (call.name == 'create_calendar_event') {
+        final args = call.args as Map<String, dynamic>;
+        return ChatResponse(
+          text: response.text ?? "I've scheduled the event.",
+          calendarEvent: CalendarEventCommand(
+            summary: args['summary'] as String,
+            start: DateTime.parse(args['start'] as String),
+            end: DateTime.parse(args['end'] as String),
+            description: args['description'] as String?,
+          ),
+        );
       } else {
-        // Plugin
         final result = await _pluginService.executeFunction(
           call.name,
           call.args is Map<String, dynamic> ? call.args as Map<String, dynamic> : null,
@@ -134,6 +156,7 @@ class ChatResponse {
   final String? pluginResult;
   final EmailCommand? emailToSend;
   final String? browserUrl;
+  final CalendarEventCommand? calendarEvent;
 
   ChatResponse({
     required this.text,
@@ -141,6 +164,7 @@ class ChatResponse {
     this.pluginResult,
     this.emailToSend,
     this.browserUrl,
+    this.calendarEvent,
   });
 }
 
@@ -158,4 +182,13 @@ class EmailCommand {
   final String body;
 
   EmailCommand({required this.to, required this.subject, required this.body});
+}
+
+class CalendarEventCommand {
+  final String summary;
+  final DateTime start;
+  final DateTime end;
+  final String? description;
+
+  CalendarEventCommand({required this.summary, required this.start, required this.end, this.description});
 }

@@ -6,6 +6,8 @@ class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
   User? get user => _user;
+  GoogleSignInAccount? _googleUser;
+  GoogleSignInAccount? get googleUser => _googleUser;
 
   AuthService() {
     _auth.authStateChanges().listen((User? user) {
@@ -16,14 +18,23 @@ class AuthService extends ChangeNotifier {
 
   Future<void> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final googleSignIn = GoogleSignIn(
+        scopes: [
+          'email',
+          'profile',
+          'https://www.googleapis.com/auth/calendar.events', // allow create/delete events
+        ],
+      );
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) return;
+      _googleUser = googleUser;
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       await _auth.signInWithCredential(credential);
+      notifyListeners();
     } catch (e) {
       debugPrint('Google sign in error: $e');
     }
@@ -31,5 +42,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    _googleUser = null;
+    notifyListeners();
   }
 }

@@ -18,6 +18,7 @@ import 'documents_screen.dart';
 import 'workflow_screen.dart';
 import 'plugins_screen.dart';
 import 'browser_screen.dart';
+import 'calendar_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -77,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const FilesScreen(),
       const DocumentsScreen(),
       const BrowserScreen(),
+      const CalendarScreen(),
       const WorkflowScreen(),
       const PluginsScreen(),
       const SettingsScreen(),
@@ -114,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.folder), label: 'Files'),
           NavigationDestination(icon: Icon(Icons.article), label: 'Docs'),
           NavigationDestination(icon: Icon(Icons.language), label: 'Browser'),
+          NavigationDestination(icon: Icon(Icons.calendar_today), label: 'Calendar'),
           NavigationDestination(icon: Icon(Icons.autorenew), label: 'Workflows'),
           NavigationDestination(icon: Icon(Icons.extension), label: 'Plugins'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),

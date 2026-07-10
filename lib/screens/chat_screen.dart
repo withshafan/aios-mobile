@@ -6,6 +6,8 @@ import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../services/email_service.dart';
 import '../services/browser_service.dart';
+import '../services/calendar_service.dart';
+import '../services/auth_service.dart';
 import '../models/chat_message.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -106,6 +108,50 @@ class ChatScreenState extends State<ChatScreen> {
       if (response.browserUrl != null) {
         final url = response.browserUrl!;
         context.read<BrowserService>().loadUrl(url);
+      }
+
+      if (response.calendarEvent != null) {
+        final cmd = response.calendarEvent!;
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Create calendar event?'),
+            content: Text('${cmd.summary}\nFrom: ${cmd.start}\nTo: ${cmd.end}'),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
+              TextButton(
+                child: const Text('Create'),
+                onPressed: () => Navigator.pop(ctx, true),
+              ),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          final auth = context.read<AuthService>();
+          final googleUser = auth.googleUser;
+          if (googleUser != null) {
+            final calendarService = CalendarService();
+            try {
+              await calendarService.createEvent(
+                googleUser,
+                summary: cmd.summary,
+                start: cmd.start,
+                end: cmd.end,
+                description: cmd.description,
+              );
+              await memory.sendMessage('Event "${cmd.summary}" added to your calendar.', isUser: false);
+            } catch (e) {
+              await memory.sendMessage('Failed to create event: $e', isUser: false);
+            }
+          } else {
+            await memory.sendMessage('Calendar access not available. Please re-login.', isUser: false);
+          }
+        } else {
+          await memory.sendMessage('Event creation cancelled.', isUser: false);
+        }
       }
     } catch (e) {
       await memory.sendMessage('Sorry, something went wrong.', isUser: false);
