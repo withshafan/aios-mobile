@@ -25,6 +25,7 @@ import 'services/emotional_service.dart';
 import 'services/trust_service.dart';
 import 'services/reality_verification_service.dart';
 import 'services/maintenance_service.dart';
+import 'services/connected_services_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
         Provider<TrustService>(create: (_) => TrustService()),
         Provider<RealityVerificationService>(create: (_) => RealityVerificationService()),
         Provider<MaintenanceService>(create: (_) => MaintenanceService()),
+        Provider<ConnectedServicesService>(create: (_) => ConnectedServicesService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',

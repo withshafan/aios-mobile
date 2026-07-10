@@ -1,35 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/digital_twin_service.dart';
 
-class DigitalTwinScreen extends StatelessWidget {
+class DigitalTwinScreen extends StatefulWidget {
   const DigitalTwinScreen({super.key});
 
   @override
+  State<DigitalTwinScreen> createState() => _DigitalTwinScreenState();
+}
+
+class _DigitalTwinScreenState extends State<DigitalTwinScreen> {
+  final _service = DigitalTwinService();
+  late Future<Map<String, dynamic>?> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _service.getProfile();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('profile')
-          .doc('digital_twin')
-          .snapshots(),
-      builder: (ctx, snap) {
-        if (!snap.hasData || snap.data?.data() == null) {
-          return const Center(child: Text('Learning your patterns...'));
-        }
-        final data = snap.data!.data() as Map<String, dynamic>;
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text('Working Hours: ${data['workingHours'] ?? 'Not yet learned'}'),
-            Text('Coding Style: ${data['codingStyle'] ?? 'Unknown'}'),
-            Text('Frequent Apps: ${data['frequentApps']?.join(', ') ?? 'None'}'),
-            // Add more learned attributes
-          ],
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: const Text('Digital Twin')),
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: _profileFuture,
+        builder: (ctx, snap) {
+          final data = snap.data ?? {};
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text('Working Hours: ${data['workingHours'] ?? 'Not set'}'),
+              const SizedBox(height: 10),
+              Text('Coding Style: ${data['codingStyle'] ?? 'Unknown'}'),
+              const SizedBox(height: 10),
+              Text('Favorite Apps: ${(data['favoriteApps'] as List?)?.join(', ') ?? 'None'}'),
+              // add more fields
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await _service.updateProfile({'workingHours': '9-5'});
+                  setState(() {
+                    _profileFuture = _service.getProfile();
+                  });
+                },
+                child: const Text('Update Working Hours (Demo)'),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

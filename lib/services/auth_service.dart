@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/connected_services_service.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -34,6 +36,9 @@ class AuthService extends ChangeNotifier {
         idToken: googleAuth.idToken,
       );
       await _auth.signInWithCredential(credential);
+      if (_auth.currentUser != null) {
+        await ConnectedServicesService.seedAvailableServices(FirebaseFirestore.instance, _auth.currentUser!.uid);
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Google sign in error: $e');

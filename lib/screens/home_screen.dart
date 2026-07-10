@@ -48,6 +48,10 @@ import 'cognitive/reality_verification_screen.dart';
 import 'cognitive/maintenance_screen.dart';
 import 'cognitive/personality_settings_screen.dart';
 
+import 'connected_services_screen.dart';
+import 'unified_search_screen.dart';
+import 'research_mission_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -200,6 +204,48 @@ class _HomeScreenState extends State<HomeScreen> {
             const Divider(),
             _drawerItem(context, 'System Maintenance', Icons.build, () => _navigate(context, 'maintenance')),
             _drawerItem(context, 'Personality Mode', Icons.settings_accessibility, () => _navigate(context, 'personality_settings')),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.link),
+              title: const Text('Connected Services'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ConnectedServicesScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.search),
+              title: const Text('Unified Search'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const UnifiedSearchScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Digital Twin'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DigitalTwinScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.science),
+              title: const Text('Autonomous Research'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ResearchMissionScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.memory),
+              title: const Text('Multi-LLM Orchestrator'),
+              onTap: () {
+                Navigator.pop(context);
+                // Show a simple info or test screen (optional)
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Multi-LLM orchestrator active in background')));
+              },
+            ),
             const Divider(),
             // Legacy tools
             _drawerItem(context, 'Tasks', Icons.task_alt, () => _navigate(context, 'tasks')),
