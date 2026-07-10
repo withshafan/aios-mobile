@@ -5,6 +5,7 @@ import 'services/auth_service.dart';
 import 'services/memory_service.dart';
 import 'services/task_service.dart';
 import 'services/document_service.dart';
+import 'services/workflow_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -24,6 +25,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => MemoryService()),
         ChangeNotifierProvider(create: (_) => TaskService()),
+        ChangeNotifierProxyProvider<TaskService, WorkflowService>(
+          create: (ctx) => WorkflowService(ctx.read<TaskService>()),
+          update: (ctx, taskService, previous) => previous ?? WorkflowService(taskService),
+        ),
         ChangeNotifierProvider(create: (_) => DocumentService()),
       ],
       child: MaterialApp(

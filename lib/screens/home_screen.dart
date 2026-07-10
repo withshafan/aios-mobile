@@ -13,6 +13,7 @@ import 'tasks_screen.dart';
 import 'android_screen.dart';
 import 'files_screen.dart';
 import 'documents_screen.dart';
+import 'workflow_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const AndroidScreen(),
       const FilesScreen(),
       const DocumentsScreen(),
+      const WorkflowScreen(),
       const SettingsScreen(),
     ];
 
@@ -59,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.phone_android), label: 'Android'),
           NavigationDestination(icon: Icon(Icons.folder), label: 'Files'),
           NavigationDestination(icon: Icon(Icons.article), label: 'Docs'),
+          NavigationDestination(icon: Icon(Icons.autorenew), label: 'Workflows'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
