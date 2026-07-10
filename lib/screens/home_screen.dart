@@ -33,6 +33,22 @@ import 'knowledge_base_screen.dart';
 import 'approval_settings_screen.dart';
 import 'digital_twin_screen.dart';
 
+import 'cognitive/executive_dashboard.dart';
+import 'cognitive/cognitive_state_screen.dart';
+import 'cognitive/world_model_screen.dart';
+import 'cognitive/life_timeline_screen.dart';
+import 'cognitive/strategic_mission_screen.dart';
+import 'cognitive/attention_screen.dart';
+import 'cognitive/curiosity_screen.dart';
+import 'cognitive/opportunities_screen.dart';
+import 'cognitive/coach_screen.dart';
+import 'cognitive/emotional_screen.dart';
+import 'cognitive/trust_screen.dart';
+import 'cognitive/reality_verification_screen.dart';
+import 'cognitive/maintenance_screen.dart';
+import 'cognitive/personality_settings_screen.dart';
+
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -91,8 +107,37 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'knowledge_base': return const KnowledgeBaseScreen();
       case 'approval': return const ApprovalSettingsScreen();
       case 'digital_twin': return const DigitalTwinScreen();
+      
+      case 'executive_dashboard': return const ExecutiveDashboard();
+      case 'cognitive_state': return CognitiveStateScreen();
+      case 'world_model': return WorldModelScreen();
+      case 'life_timeline': return LifeTimelineScreen();
+      case 'strategic_missions': return StrategicMissionScreen();
+      case 'attention': return AttentionScreen();
+      case 'curiosity': return CuriosityScreen();
+      case 'opportunities': return OpportunitiesScreen();
+      case 'coach': return CoachScreen();
+      case 'emotional': return EmotionalScreen();
+      case 'trust': return TrustScreen();
+      case 'reality_verification': return RealityVerificationScreen();
+      case 'maintenance': return MaintenanceScreen();
+      case 'personality_settings': return PersonalitySettingsScreen();
+
       default: return const SettingsScreen();
     }
+  }
+  
+  void _navigate(BuildContext context, String screenId) {
+    setState(() => _currentScreen = screenId);
+    Navigator.pop(context);
+  }
+
+  Widget _drawerItem(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
+    );
   }
 
   @override
@@ -134,30 +179,49 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text('AIOS AURA', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text('AIOS AURA Cognitive OS', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
-            ListTile(leading: const Icon(Icons.chat), title: const Text('Chat'), onTap: () { setState(() => _currentScreen = 'chat'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.task_alt), title: const Text('Tasks'), onTap: () { setState(() => _currentScreen = 'tasks'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.memory), title: const Text('Memory'), onTap: () { setState(() => _currentScreen = 'memory'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.phone_android), title: const Text('Android'), onTap: () { setState(() => _currentScreen = 'android'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.folder), title: const Text('Files'), onTap: () { setState(() => _currentScreen = 'files'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.article), title: const Text('Docs'), onTap: () { setState(() => _currentScreen = 'docs'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.language), title: const Text('Browser'), onTap: () { setState(() => _currentScreen = 'browser'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.calendar_today), title: const Text('Calendar'), onTap: () { setState(() => _currentScreen = 'calendar'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.autorenew), title: const Text('Workflows'), onTap: () { setState(() => _currentScreen = 'workflows'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.account_tree), title: const Text('Planner'), onTap: () { setState(() => _currentScreen = 'planner'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.extension), title: const Text('Plugins'), onTap: () { setState(() => _currentScreen = 'plugins'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.analytics), title: const Text('Analytics'), onTap: () { setState(() => _currentScreen = 'analytics'); Navigator.pop(context); }),
+            _drawerItem(context, 'Chat', Icons.chat, () => _navigate(context, 'chat')),
+            _drawerItem(context, 'Executive Dashboard', Icons.dashboard, () => _navigate(context, 'executive_dashboard')),
             const Divider(),
-            ListTile(leading: const Icon(Icons.flag), title: const Text('Goals'), onTap: () { setState(() => _currentScreen = 'goals'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.share), title: const Text('Knowledge Graph'), onTap: () { setState(() => _currentScreen = 'knowledge_graph'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.store), title: const Text('Plugin Marketplace'), onTap: () { setState(() => _currentScreen = 'marketplace'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.science), title: const Text('Research Mode'), onTap: () { setState(() => _currentScreen = 'research'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.search), title: const Text('Knowledge Base'), onTap: () { setState(() => _currentScreen = 'knowledge_base'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.security), title: const Text('Approval Level'), onTap: () { setState(() => _currentScreen = 'approval'); Navigator.pop(context); }),
-            ListTile(leading: const Icon(Icons.person), title: const Text('Digital Twin'), onTap: () { setState(() => _currentScreen = 'digital_twin'); Navigator.pop(context); }),
+            _drawerItem(context, 'Cognitive State', Icons.psychology, () => _navigate(context, 'cognitive_state')),
+            _drawerItem(context, 'World Model', Icons.public, () => _navigate(context, 'world_model')),
+            _drawerItem(context, 'Life Timeline', Icons.timeline, () => _navigate(context, 'life_timeline')),
+            _drawerItem(context, 'Strategic Missions', Icons.flag, () => _navigate(context, 'strategic_missions')),
             const Divider(),
-            ListTile(leading: const Icon(Icons.settings), title: const Text('Settings'), onTap: () { setState(() => _currentScreen = 'settings'); Navigator.pop(context); }),
+            _drawerItem(context, 'Attention Center', Icons.notifications_active, () => _navigate(context, 'attention')),
+            _drawerItem(context, 'Curiosity Feed', Icons.explore, () => _navigate(context, 'curiosity')),
+            _drawerItem(context, 'Opportunities', Icons.lightbulb, () => _navigate(context, 'opportunities')),
+            const Divider(),
+            _drawerItem(context, 'Personal Coach', Icons.trending_up, () => _navigate(context, 'coach')),
+            _drawerItem(context, 'Emotional Context', Icons.sentiment_satisfied, () => _navigate(context, 'emotional')),
+            _drawerItem(context, 'Trust & Reality', Icons.verified, () => _navigate(context, 'trust')),
+            _drawerItem(context, 'Reality Verification', Icons.fact_check, () => _navigate(context, 'reality_verification')),
+            const Divider(),
+            _drawerItem(context, 'System Maintenance', Icons.build, () => _navigate(context, 'maintenance')),
+            _drawerItem(context, 'Personality Mode', Icons.settings_accessibility, () => _navigate(context, 'personality_settings')),
+            const Divider(),
+            // Legacy tools
+            _drawerItem(context, 'Tasks', Icons.task_alt, () => _navigate(context, 'tasks')),
+            _drawerItem(context, 'Planner', Icons.account_tree, () => _navigate(context, 'planner')),
+            _drawerItem(context, 'Android', Icons.phone_android, () => _navigate(context, 'android')),
+            _drawerItem(context, 'Files', Icons.folder, () => _navigate(context, 'files')),
+            _drawerItem(context, 'Docs', Icons.article, () => _navigate(context, 'docs')),
+            _drawerItem(context, 'Browser', Icons.language, () => _navigate(context, 'browser')),
+            _drawerItem(context, 'Calendar', Icons.calendar_today, () => _navigate(context, 'calendar')),
+            _drawerItem(context, 'Workflows', Icons.autorenew, () => _navigate(context, 'workflows')),
+            _drawerItem(context, 'Plugins', Icons.extension, () => _navigate(context, 'plugins')),
+            _drawerItem(context, 'Analytics', Icons.analytics, () => _navigate(context, 'analytics')),
+            const Divider(),
+            _drawerItem(context, 'Goals', Icons.flag, () => _navigate(context, 'goals')),
+            _drawerItem(context, 'Knowledge Graph', Icons.share, () => _navigate(context, 'knowledge_graph')),
+            _drawerItem(context, 'Plugin Marketplace', Icons.store, () => _navigate(context, 'marketplace')),
+            _drawerItem(context, 'Research Mode', Icons.science, () => _navigate(context, 'research')),
+            _drawerItem(context, 'Knowledge Base', Icons.search, () => _navigate(context, 'knowledge_base')),
+            _drawerItem(context, 'Approval Level', Icons.security, () => _navigate(context, 'approval')),
+            _drawerItem(context, 'Digital Twin', Icons.person, () => _navigate(context, 'digital_twin')),
+            const Divider(),
+            _drawerItem(context, 'Settings', Icons.settings, () => _navigate(context, 'settings')),
           ],
         ),
       ),

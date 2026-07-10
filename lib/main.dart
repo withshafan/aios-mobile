@@ -12,6 +12,20 @@ import 'services/analytics_service.dart';
 import 'services/system_prompt_service.dart';
 import 'services/planner_service.dart';
 import 'services/goal_service.dart';
+
+import 'services/cognitive_state_service.dart';
+import 'services/world_model_service.dart';
+import 'services/life_timeline_service.dart';
+import 'services/attention_service.dart';
+import 'services/strategic_mission_service.dart';
+import 'services/curiosity_service.dart';
+import 'services/opportunity_service.dart';
+import 'services/coach_service.dart';
+import 'services/emotional_service.dart';
+import 'services/trust_service.dart';
+import 'services/reality_verification_service.dart';
+import 'services/maintenance_service.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -42,6 +56,18 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SystemPromptService()),
         ChangeNotifierProvider(create: (_) => PlannerService()),
         ChangeNotifierProvider(create: (_) => GoalService()),
+        Provider<CognitiveStateService>(create: (_) => CognitiveStateService()),
+        Provider<WorldModelService>(create: (_) => WorldModelService()),
+        Provider<LifeTimelineService>(create: (_) => LifeTimelineService()),
+        Provider<AttentionService>(create: (_) => AttentionService()),
+        Provider<StrategicMissionService>(create: (_) => StrategicMissionService()),
+        Provider<CuriosityService>(create: (_) => CuriosityService()),
+        Provider<OpportunityService>(create: (_) => OpportunityService()),
+        Provider<CoachService>(create: (_) => CoachService()),
+        Provider<EmotionalService>(create: (_) => EmotionalService()),
+        Provider<TrustService>(create: (_) => TrustService()),
+        Provider<RealityVerificationService>(create: (_) => RealityVerificationService()),
+        Provider<MaintenanceService>(create: (_) => MaintenanceService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',
