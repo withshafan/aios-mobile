@@ -153,6 +153,12 @@ class ChatScreenState extends State<ChatScreen> {
           await memory.sendMessage('Event creation cancelled.', isUser: false);
         }
       }
+
+      if (response.plannerAction != null) {
+        // Planner already updated, just show confirmation
+        // It's already handled in the general response text handling
+        // But we could add a special UI thing here if wanted
+      }
     } catch (e) {
       await memory.sendMessage('Sorry, something went wrong.', isUser: false);
     } finally {

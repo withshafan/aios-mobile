@@ -1,6 +1,8 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'plugin_service.dart';
 import 'analytics_service.dart';
+import 'system_prompt_service.dart';
+import 'planner_service.dart';
 import '../models/plugin_info.dart';
 
 class GeminiService {
@@ -8,6 +10,8 @@ class GeminiService {
   late final GenerativeModel _model;
   final PluginService _pluginService;
   final AnalyticsService _analyticsService;
+  final SystemPromptService _systemPromptService;
+  final PlannerService _plannerService;
 
   static const _createTaskFunction = FunctionDeclaration(
     'create_task',
@@ -48,9 +52,23 @@ class GeminiService {
     }, required: ['summary', 'start', 'end']),
   );
 
-  GeminiService(this._pluginService, this._analyticsService) {
-    _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey);
-  }
+  static const _addPlanStepFunction = FunctionDeclaration(
+    'add_plan_step',
+    'Add a step to the execution plan',
+    Schema(SchemaType.object, properties: {
+      'description': Schema(SchemaType.string, description: 'Step description'),
+    }, required: ['description']),
+  );
+
+  static const _completePlanStepFunction = FunctionDeclaration(
+    'complete_plan_step',
+    'Mark a plan step as completed (provide the step description to match)',
+    Schema(SchemaType.object, properties: {
+      'description': Schema(SchemaType.string, description: 'Exact description of step to complete'),
+    }, required: ['description']),
+  );
+
+  GeminiService(this._pluginService, this._analyticsService, this._systemPromptService, this._plannerService);
 
   List<Tool> _buildTools() {
     final functionDeclarations = <FunctionDeclaration>[
@@ -58,6 +76,8 @@ class GeminiService {
       _sendEmailFunction,
       _openWebsiteFunction,
       _createCalendarEventFunction,
+      _addPlanStepFunction,
+      _completePlanStepFunction,
     ];
 
     for (var plugin in _pluginService.plugins) {
@@ -91,27 +111,26 @@ class GeminiService {
     contents.add(Content.text(prompt));
 
     final tools = _buildTools();
+    final systemInstruction = Content.text(_systemPromptService.currentPrompt);
+    
     final functionModel = GenerativeModel(
       model: 'gemini-2.0-flash',
       apiKey: apiKey,
       tools: tools,
+      systemInstruction: systemInstruction,
     );
 
     final chat = functionModel.startChat(history: contents);
     final response = await chat.sendMessage(Content.text(prompt));
 
-    // Token estimation (very approximate)
     final inputTokens = _analyticsService.estimateTokens(prompt);
     final outputTokens = _analyticsService.estimateTokens(response.text ?? '');
-
-    // Log message (agent name will be added in chat_screen if needed)
     await _analyticsService.logMessage(inputTokens, outputTokens);
 
     if (response.functionCalls.isNotEmpty) {
       final call = response.functionCalls.first;
       if (call.name == 'create_task') {
         final args = call.args as Map<String, dynamic>;
-        // Log agent usage
         await _analyticsService.logMessage(0, 0, agentName: 'task');
         return ChatResponse(
           text: response.text ?? "I've created the task.",
@@ -151,8 +170,31 @@ class GeminiService {
             description: args['description'] as String?,
           ),
         );
+      } else if (call.name == 'add_plan_step') {
+        final args = call.args as Map<String, dynamic>;
+        final description = args['description'] as String;
+        await _plannerService.addTask(description);
+        await _analyticsService.logMessage(0, 0, agentName: 'planner');
+        return ChatResponse(
+          text: response.text ?? "Added plan step.",
+          plannerAction: PlannerAction(type: 'add', description: description),
+        );
+      } else if (call.name == 'complete_plan_step') {
+        final args = call.args as Map<String, dynamic>;
+        final description = args['description'] as String;
+        final tasks = _plannerService.tasks;
+        for (var task in tasks) {
+          if (task['description'] == description) {
+            await _plannerService.updateStatus(task['id'], 'completed');
+            break;
+          }
+        }
+        await _analyticsService.logMessage(0, 0, agentName: 'planner');
+        return ChatResponse(
+          text: response.text ?? "Completed plan step.",
+          plannerAction: PlannerAction(type: 'complete', description: description),
+        );
       } else {
-        // Plugin
         final result = await _pluginService.executeFunction(
           call.name,
           call.args is Map<String, dynamic> ? call.args as Map<String, dynamic> : null,
@@ -166,6 +208,12 @@ class GeminiService {
   }
 }
 
+class PlannerAction {
+  final String type; // 'add' or 'complete'
+  final String description;
+  PlannerAction({required this.type, required this.description});
+}
+
 class ChatResponse {
   final String text;
   final AiosTaskCommand? taskToCreate;
@@ -173,6 +221,7 @@ class ChatResponse {
   final EmailCommand? emailToSend;
   final String? browserUrl;
   final CalendarEventCommand? calendarEvent;
+  final PlannerAction? plannerAction;
 
   ChatResponse({
     required this.text,
@@ -181,6 +230,7 @@ class ChatResponse {
     this.emailToSend,
     this.browserUrl,
     this.calendarEvent,
+    this.plannerAction,
   });
 }
 

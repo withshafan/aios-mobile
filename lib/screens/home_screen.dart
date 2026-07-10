@@ -9,6 +9,8 @@ import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/browser_service.dart';
 import '../services/analytics_service.dart';
+import '../services/system_prompt_service.dart';
+import '../services/planner_service.dart';
 import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
@@ -21,6 +23,7 @@ import 'plugins_screen.dart';
 import 'browser_screen.dart';
 import 'calendar_screen.dart';
 import 'analytics_screen.dart';
+import 'planner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,7 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     final pluginService = context.read<PluginService>();
     final analyticsService = context.read<AnalyticsService>();
-    _gemini = GeminiService(pluginService, analyticsService);
+    final systemPromptService = context.read<SystemPromptService>();
+    final plannerService = context.read<PlannerService>();
+    _gemini = GeminiService(pluginService, analyticsService, systemPromptService, plannerService);
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
   }
@@ -82,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const BrowserScreen(),
       const CalendarScreen(),
       const WorkflowScreen(),
+      const PlannerScreen(),
       const PluginsScreen(),
       const AnalyticsScreen(),
       const SettingsScreen(),
@@ -121,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.language), label: 'Browser'),
           NavigationDestination(icon: Icon(Icons.calendar_today), label: 'Calendar'),
           NavigationDestination(icon: Icon(Icons.autorenew), label: 'Workflows'),
+          NavigationDestination(icon: Icon(Icons.account_tree), label: 'Planner'),
           NavigationDestination(icon: Icon(Icons.extension), label: 'Plugins'),
           NavigationDestination(icon: Icon(Icons.analytics), label: 'Analytics'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
