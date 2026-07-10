@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/tokens.dart';
 import '../services/unified_search_service.dart';
 
 class UnifiedSearchScreen extends StatefulWidget {
@@ -31,32 +32,45 @@ class _UnifiedSearchScreenState extends State<UnifiedSearchScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(space4),
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Search across all your knowledge...',
-                suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: () => _search(_searchCtrl.text)),
+                hintText: 'Search chats, docs, tasks, emails...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: AppColors.surfaceRaised,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(radiusSm),
+                  borderSide: BorderSide.none,
+                ),
               ),
               onSubmitted: _search,
             ),
           ),
           if (_isSearching) const LinearProgressIndicator(),
           Expanded(
-            child: ListView.builder(
-              itemCount: _results.length,
-              itemBuilder: (_, i) {
-                final item = _results[i];
-                return ListTile(
-                  title: Text(item['title'] ?? item['content']?.substring(0, 50) ?? 'No title'),
-                  subtitle: Text('Source: ${item['source'] ?? 'Unknown'}'),
-                  onTap: () {
-                    // open detail
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opening...')));
-                  },
-                );
-              },
-            ),
+            child: _results.isEmpty
+                ? const Center(child: Text('Search across your entire knowledge base'))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(space4),
+                    itemCount: _results.length,
+                    itemBuilder: (_, i) {
+                      final item = _results[i];
+                      return Card(
+                        color: AppColors.surfaceRaised,
+                        margin: const EdgeInsets.only(bottom: space2),
+                        child: ListTile(
+                          title: Text(item['title'] ?? item['content']?.substring(0, 60) ?? 'Untitled'),
+                          subtitle: Text('Source: ${item['source'] ?? 'Unknown'}'),
+                          trailing: Icon(Icons.open_in_new, color: AppColors.accentViolet),
+                          onTap: () {
+                            // could navigate to detail view
+                          },
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

@@ -17,6 +17,12 @@ import 'approval_matrix_screen.dart';
 import 'strategic_missions_screen.dart';
 import 'research_screen.dart';
 import 'settings_screen.dart';
+import 'unified_search_screen.dart';
+import 'cognitive_state_screen.dart';
+import 'life_timeline_screen.dart';
+import 'attention_center_screen.dart';
+import 'memory_integrity_screen.dart';
+import 'system_health_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -41,6 +47,12 @@ class MoreScreen extends StatelessWidget {
       _MoreItem('Strategic Missions', Icons.flight_takeoff, const StrategicMissionsScreen()),
       _MoreItem('Research', Icons.science, const ResearchScreen()),
       _MoreItem('Settings', Icons.settings, const SettingsScreen()),
+      _MoreItem('Unified Search', Icons.search, const UnifiedSearchScreen()),
+      _MoreItem('Cognitive State', Icons.psychology, const CognitiveStateScreen()),
+      _MoreItem('Life Timeline', Icons.timeline, const LifeTimelineScreen()),
+      _MoreItem('Attention Center', Icons.notifications_active, const AttentionCenterScreen()),
+      _MoreItem('Memory Integrity', Icons.auto_fix_high, const MemoryIntegrityScreen()),
+      _MoreItem('System Health', Icons.favorite, const SystemHealthScreen()),
     ];
 
     return GridView.count(
@@ -63,7 +75,7 @@ class MoreScreen extends StatelessWidget {
                 child: Icon(item.icon, size: 32, color: AppColors.accentViolet),
               ),
               const SizedBox(height: space1),
-              Text(item.label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
+              Text(item.label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
             ],
           ),
         );
