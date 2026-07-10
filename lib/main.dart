@@ -46,6 +46,7 @@ import 'screens/chat_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/onboarding_service.dart';
+import 'services/approval_service.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -96,6 +97,7 @@ class MyApp extends StatelessWidget {
         Provider<AgentTeamService>(create: (_) => AgentTeamService()),
         Provider<SelfProgrammingService>(create: (_) => SelfProgrammingService()),
         Provider<AuditService>(create: (_) => AuditService()),
+        ChangeNotifierProvider(create: (_) => ApprovalService()),
         Provider<CircuitBreakerService>(create: (_) => CircuitBreakerService()),
         Provider<WebhookService>(create: (_) => WebhookService()),
         Provider<CollaborationService>(create: (_) => CollaborationService()),
@@ -160,15 +162,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _seeded = false;
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
     if (auth.user == null) {
+      _seeded = false;
       return const LoginScreen();
     }
+
+    if (!_seeded) {
+      _seeded = true;
+      context.read<ApprovalService>().seedDefaults();
+    }
+
     return FutureBuilder<bool>(
       future: OnboardingService.isOnboardingComplete(),
       builder: (ctx, snap) {

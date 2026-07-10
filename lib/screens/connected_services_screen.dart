@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../theme/tokens.dart';
 import '../services/connected_services_service.dart';
 import '../models/connected_service.dart';
 
@@ -16,23 +16,30 @@ class ConnectedServicesScreen extends StatelessWidget {
         builder: (ctx, snap) {
           final services = snap.data ?? [];
           return ListView.builder(
+            padding: const EdgeInsets.all(space4),
             itemCount: services.length,
             itemBuilder: (_, i) {
               final service = services[i];
-              return ListTile(
-                leading: _getIcon(service.icon),
-                title: Text(service.name),
-                subtitle: Text(service.isConnected ? 'Connected' : 'Not connected'),
-                trailing: Switch(
-                  value: service.isConnected,
-                  onChanged: (val) async {
-                    if (val) {
-                      // Simulate OAuth connection (Google Drive example)
-                      _showOAuthDialog(context, service);
-                    } else {
-                      await context.read<ConnectedServicesService>().removeService(service.id);
-                    }
-                  },
+              return Card(
+                color: AppColors.surfaceRaised,
+                margin: const EdgeInsets.only(bottom: space3),
+                child: ListTile(
+                  leading: Icon(_getIcon(service.icon), color: AppColors.accentViolet),
+                  title: Text(service.name),
+                  subtitle: Text(service.isConnected ? 'Connected' : 'Tap to connect'),
+                  trailing: Switch(
+                    value: service.isConnected,
+                    onChanged: (val) async {
+                      if (val) {
+                        // simulate OAuth
+                        await context.read<ConnectedServicesService>().addService(
+                              ConnectedService(id: service.id, name: service.name, icon: service.icon, isConnected: true),
+                            );
+                      } else {
+                        await context.read<ConnectedServicesService>().removeService(service.id);
+                      }
+                    },
+                  ),
                 ),
               );
             },
@@ -50,32 +57,6 @@ class ConnectedServicesScreen extends StatelessWidget {
       case 'description': return const Icon(Icons.description);
       case 'chat': return const Icon(Icons.chat);
       default: return const Icon(Icons.link);
-    }
-  }
-
-  void _showOAuthDialog(BuildContext context, ConnectedService service) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Connect ${service.name}'),
-        content: const Text('This will open your browser to authorize AURA. Allow?'),
-        actions: [
-          TextButton(child: const Text('Cancel'), onPressed: () => Navigator.pop(ctx, false)),
-          TextButton(child: const Text('Connect'), onPressed: () => Navigator.pop(ctx, true)),
-        ],
-      ),
-    );
-    if (result == true) {
-      // Open a dummy OAuth URL (in a real app, use GoogleSignIn with additional scopes)
-      final url = Uri.parse('https://accounts.google.com/o/oauth2/auth?...');
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      }
-      // For now, we'll just set connected status
-      await context.read<ConnectedServicesService>().addService(
-            ConnectedService(id: service.id, name: service.name, icon: service.icon, isConnected: true),
-          );
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${service.name} connected')));
     }
   }
 }
