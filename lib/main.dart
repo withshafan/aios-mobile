@@ -42,6 +42,11 @@ import 'services/collaboration_service.dart';
 import 'services/task_runner_service.dart';
 import 'services/gemini_service.dart';
 
+import 'screens/chat_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'services/onboarding_service.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -164,6 +169,17 @@ class AuthGate extends StatelessWidget {
     if (auth.user == null) {
       return const LoginScreen();
     }
-    return const HomeScreen();
+    return FutureBuilder<bool>(
+      future: OnboardingService.isOnboardingComplete(),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snap.data == false) {
+          return const OnboardingScreen();
+        }
+        return const HomeScreen();
+      },
+    );
   }
 }
