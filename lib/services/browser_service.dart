@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 class BrowserService extends ChangeNotifier {
+  BrowserService() {
+    debugPrint('BrowserService constructor START');
+    debugPrint('BrowserService constructor END');
+  }
   String _url = 'https://google.com';
   String get url => _url;
   bool _navigateToBrowser = false;
@@ -28,3 +32,4 @@ class BrowserService extends ChangeNotifier {
     notifyListeners();
   }
 }
+

@@ -10,6 +10,11 @@ class MemoryService extends ChangeNotifier {
 
   String get userId => FirebaseAuth.instance.currentUser!.uid;
 
+  MemoryService() {
+    debugPrint('MemoryService constructor START');
+    debugPrint('MemoryService constructor END');
+  }
+
   void loadMessages() {
     _firestore
         .collection('users')

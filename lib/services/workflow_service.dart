@@ -21,9 +21,11 @@ class WorkflowService extends ChangeNotifier {
   String get userId => FirebaseAuth.instance.currentUser!.uid;
 
   WorkflowService(this._taskService) {
+    debugPrint('WorkflowService constructor START');
     _initNotifications();
     loadWorkflows();
     startEvaluation();
+    debugPrint('WorkflowService constructor END');
   }
 
   void _initNotifications() async {
@@ -136,3 +138,4 @@ class WorkflowService extends ChangeNotifier {
     super.dispose();
   }
 }
+

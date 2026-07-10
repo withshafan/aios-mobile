@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CircuitBreakerService {
+  CircuitBreakerService() {
+    debugPrint('CircuitBreakerService constructor START');
+    debugPrint('CircuitBreakerService constructor END');
+  }
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   String get uid => FirebaseAuth.instance.currentUser!.uid;
 

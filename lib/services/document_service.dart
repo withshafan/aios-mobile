@@ -16,6 +16,7 @@ class DocumentService extends ChangeNotifier {
   String get userId => FirebaseAuth.instance.currentUser!.uid;
 
   DocumentService() {
+    debugPrint('DocumentService constructor START');
     loadHistory();
   }
 
@@ -96,3 +97,4 @@ class DocumentService extends ChangeNotifier {
     await OpenFile.open(path);
   }
 }
+

@@ -14,11 +14,15 @@ class AuthService extends ChangeNotifier {
   GoogleSignInAccount? get googleUser => _googleUser;
 
   AuthService() {
+    debugPrint('AuthService constructor START');
     _auth.authStateChanges().listen((User? user) {
       _user = user;
       notifyListeners();
     });
+    debugPrint('AuthService constructor END');
   }
+
+  Stream<User?> authStateChanges() => _auth.authStateChanges();
 
   Future<void> signInWithGoogle() async {
     try {

@@ -4,6 +4,10 @@ import '../models/approval_matrix.dart';
 import 'package:flutter/foundation.dart';
 
 class ApprovalService extends ChangeNotifier {
+  ApprovalService() {
+    debugPrint('ApprovalService constructor START');
+    debugPrint('ApprovalService constructor END');
+  }
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   String get uid => FirebaseAuth.instance.currentUser!.uid;
 
@@ -43,3 +47,4 @@ class ApprovalService extends ChangeNotifier {
     }
   }
 }
+

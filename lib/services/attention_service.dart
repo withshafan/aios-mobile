@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AttentionItem {
+
   String id;
   String title;
   String type; // 'notification', 'reminder', 'alert'
@@ -34,7 +36,11 @@ class AttentionItem {
       );
 }
 
-class AttentionService {
+class AttentionService extends ChangeNotifier {
+  AttentionService() {
+    debugPrint('AttentionService constructor START');
+    debugPrint('AttentionService constructor END');
+  }
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   String get uid => FirebaseAuth.instance.currentUser!.uid;
 

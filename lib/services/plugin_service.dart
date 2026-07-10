@@ -40,6 +40,7 @@ class PluginService extends ChangeNotifier {
   String get userId => FirebaseAuth.instance.currentUser!.uid;
 
   PluginService() {
+    debugPrint('PluginService constructor START');
     loadPlugins();
   }
 
@@ -132,3 +133,4 @@ class PluginService extends ChangeNotifier {
     super.dispose();
   }
 }
+

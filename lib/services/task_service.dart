@@ -16,9 +16,11 @@ class TaskService extends ChangeNotifier {
   String get userId => FirebaseAuth.instance.currentUser!.uid;
 
   TaskService() {
+    debugPrint('TaskService constructor START');
     tz_data.initializeTimeZones();
     _initNotifications();
     loadTasks();
+    debugPrint('TaskService constructor END');
   }
 
   void _initNotifications() async {

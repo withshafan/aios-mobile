@@ -19,6 +19,7 @@ class AnalyticsService extends ChangeNotifier {
   Map<String, int> get agentCountsToday => _agentCountsToday;
 
   AnalyticsService() {
+    debugPrint('AnalyticsService constructor START');
     loadTodayData();
   }
 
@@ -91,3 +92,4 @@ class AnalyticsService extends ChangeNotifier {
     return (text.length / 4).ceil();
   }
 }
+
