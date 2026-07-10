@@ -6,6 +6,7 @@ import '../services/task_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../services/document_service.dart';
+import '../services/plugin_service.dart';
 import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
@@ -14,6 +15,7 @@ import 'android_screen.dart';
 import 'files_screen.dart';
 import 'documents_screen.dart';
 import 'workflow_screen.dart';
+import 'plugins_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GeminiService _gemini = GeminiService();
+  late final GeminiService _gemini;
   final VoiceService _voice = VoiceService();
   int _selectedIndex = 0;
   final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
@@ -31,6 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Get PluginService from Provider (it's already in the widget tree)
+    final pluginService = context.read<PluginService>();
+    _gemini = GeminiService(pluginService);
     context.read<MemoryService>().loadMessages();
     _setupWakeWord();
   }
@@ -38,14 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _setupWakeWord() {
     _voice.onWakeWordDetected = () async {
       if (!mounted) return;
-      // Switch to Chat tab
       setState(() => _selectedIndex = 0);
-
-      // Wait for the tab to appear
       await Future.delayed(const Duration(milliseconds: 800));
-
       if (!mounted) return;
-      // Start voice input and capture command
       final spoken = await _voice.listen(timeout: const Duration(seconds: 7));
       if (spoken != null && spoken.isNotEmpty && mounted) {
         chatKey.currentState?.sendVoiceCommand(spoken);
@@ -64,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const FilesScreen(),
       const DocumentsScreen(),
       const WorkflowScreen(),
+      const PluginsScreen(),
       const SettingsScreen(),
     ];
 
@@ -99,6 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.folder), label: 'Files'),
           NavigationDestination(icon: Icon(Icons.article), label: 'Docs'),
           NavigationDestination(icon: Icon(Icons.autorenew), label: 'Workflows'),
+          NavigationDestination(icon: Icon(Icons.extension), label: 'Plugins'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),

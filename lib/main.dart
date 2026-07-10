@@ -5,6 +5,7 @@ import 'services/auth_service.dart';
 import 'services/memory_service.dart';
 import 'services/task_service.dart';
 import 'services/document_service.dart';
+import 'services/plugin_service.dart';
 import 'services/workflow_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
           update: (ctx, taskService, previous) => previous ?? WorkflowService(taskService),
         ),
         ChangeNotifierProvider(create: (_) => DocumentService()),
+        ChangeNotifierProvider(create: (_) => PluginService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',
