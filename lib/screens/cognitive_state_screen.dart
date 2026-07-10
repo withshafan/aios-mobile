@@ -12,9 +12,9 @@ class CognitiveStateScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Cognitive State')),
       body: StreamBuilder<CognitiveState>(
-        stream: context.read<CognitiveStateService>().stateStream,
-        builder: (ctx, snap) {
-          final state = snap.data ?? CognitiveState();
+        stream: context.read<CognitiveStateService>().stateStream(),
+        builder: (context, snapshot) {
+          final state = snapshot.data ?? CognitiveState();
           return ListView(
             padding: const EdgeInsets.all(space4),
             children: [
