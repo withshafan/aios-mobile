@@ -27,6 +27,14 @@ class GeminiService {
     }, required: ['to', 'subject', 'body']),
   );
 
+  static const _openWebsiteFunction = FunctionDeclaration(
+    'open_website',
+    'Open a website in the in-app browser',
+    Schema(SchemaType.object, properties: {
+      'url': Schema(SchemaType.string, description: 'The website URL (e.g., https://google.com)'),
+    }, required: ['url']),
+  );
+
   GeminiService(this._pluginService) {
     _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey);
   }
@@ -35,6 +43,7 @@ class GeminiService {
     final functionDeclarations = <FunctionDeclaration>[
       _createTaskFunction,
       _sendEmailFunction,
+      _openWebsiteFunction,
     ];
 
     for (var plugin in _pluginService.plugins) {
@@ -99,6 +108,12 @@ class GeminiService {
             body: args['body'] as String,
           ),
         );
+      } else if (call.name == 'open_website') {
+        final args = call.args as Map<String, dynamic>;
+        return ChatResponse(
+          text: response.text ?? "Opening ${args['url']}.",
+          browserUrl: args['url'] as String,
+        );
       } else {
         // Plugin
         final result = await _pluginService.executeFunction(
@@ -118,8 +133,15 @@ class ChatResponse {
   final AiosTaskCommand? taskToCreate;
   final String? pluginResult;
   final EmailCommand? emailToSend;
+  final String? browserUrl;
 
-  ChatResponse({required this.text, this.taskToCreate, this.pluginResult, this.emailToSend});
+  ChatResponse({
+    required this.text,
+    this.taskToCreate,
+    this.pluginResult,
+    this.emailToSend,
+    this.browserUrl,
+  });
 }
 
 class AiosTaskCommand {

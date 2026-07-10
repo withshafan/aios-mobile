@@ -7,6 +7,7 @@ import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
+import '../services/browser_service.dart';
 import 'chat_screen.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
@@ -16,6 +17,7 @@ import 'files_screen.dart';
 import 'documents_screen.dart';
 import 'workflow_screen.dart';
 import 'plugins_screen.dart';
+import 'browser_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Get PluginService from Provider (it's already in the widget tree)
     final pluginService = context.read<PluginService>();
     _gemini = GeminiService(pluginService);
     context.read<MemoryService>().loadMessages();
@@ -56,6 +57,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final voice = context.watch<VoiceService>();
+    final browserService = context.watch<BrowserService>();
+
+    // Navigate to browser if requested
+    if (browserService.navigateToBrowser) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _selectedIndex = 6); // Browser index
+          browserService.didNavigate();
+        }
+      });
+    }
+
     final screens = [
       ChatScreen(gemini: _gemini, voice: _voice, key: chatKey),
       const TasksScreen(),
@@ -63,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const AndroidScreen(),
       const FilesScreen(),
       const DocumentsScreen(),
+      const BrowserScreen(),
       const WorkflowScreen(),
       const PluginsScreen(),
       const SettingsScreen(),
@@ -99,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(icon: Icon(Icons.phone_android), label: 'Android'),
           NavigationDestination(icon: Icon(Icons.folder), label: 'Files'),
           NavigationDestination(icon: Icon(Icons.article), label: 'Docs'),
+          NavigationDestination(icon: Icon(Icons.language), label: 'Browser'),
           NavigationDestination(icon: Icon(Icons.autorenew), label: 'Workflows'),
           NavigationDestination(icon: Icon(Icons.extension), label: 'Plugins'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),

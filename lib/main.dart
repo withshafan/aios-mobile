@@ -7,6 +7,7 @@ import 'services/task_service.dart';
 import 'services/document_service.dart';
 import 'services/plugin_service.dart';
 import 'services/workflow_service.dart';
+import 'services/browser_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => DocumentService()),
         ChangeNotifierProvider(create: (_) => PluginService()),
+        ChangeNotifierProvider(create: (_) => BrowserService()),
       ],
       child: MaterialApp(
         title: 'AIOS Mobile',

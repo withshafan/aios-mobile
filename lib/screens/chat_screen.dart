@@ -5,6 +5,7 @@ import '../services/task_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
 import '../services/email_service.dart';
+import '../services/browser_service.dart';
 import '../models/chat_message.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -100,6 +101,11 @@ class ChatScreenState extends State<ChatScreen> {
         } else {
           await memory.sendMessage('Email cancelled.', isUser: false);
         }
+      }
+
+      if (response.browserUrl != null) {
+        final url = response.browserUrl!;
+        context.read<BrowserService>().loadUrl(url);
       }
     } catch (e) {
       await memory.sendMessage('Sorry, something went wrong.', isUser: false);
