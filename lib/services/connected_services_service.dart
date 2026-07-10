@@ -34,6 +34,21 @@ class ConnectedServicesService {
   }
 
   // Seed default available services (called once)
+  Future<void> seedDefaults() async {
+    final snap = await _db.collection('users').doc(uid).collection('connected_services').get();
+    if (snap.docs.isNotEmpty) return;
+    final defaults = [
+      ConnectedService(id: 'google_drive', name: 'Google Drive', icon: 'cloud'),
+      ConnectedService(id: 'github', name: 'GitHub', icon: 'code'),
+      ConnectedService(id: 'gmail', name: 'Gmail', icon: 'email'),
+      ConnectedService(id: 'notion', name: 'Notion', icon: 'description'),
+      ConnectedService(id: 'slack', name: 'Slack', icon: 'chat'),
+    ];
+    for (var s in defaults) {
+      await _db.collection('users').doc(uid).collection('connected_services').doc(s.id).set(s.toMap());
+    }
+  }
+
   static Future<void> seedAvailableServices(FirebaseFirestore db, String uid) async {
     final snap = await db.collection('users').doc(uid).collection('connected_services').get();
     if (snap.docs.isNotEmpty) return;

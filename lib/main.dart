@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,8 @@ import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/onboarding_service.dart';
 import 'screens/splash_screen.dart';
+import 'services/connected_services_service.dart';
+import 'services/agent_team_service.dart';
 
 void main() async {
   debugPrint('===== START main() =====');
@@ -107,6 +110,14 @@ class MyApp extends StatelessWidget {
           debugPrint('Creating CircuitBreakerService...');
           return CircuitBreakerService();
         }),
+        Provider(create: (_) {
+          debugPrint('Creating ConnectedServicesService...');
+          return ConnectedServicesService();
+        }),
+        Provider(create: (_) {
+          debugPrint('Creating AgentTeamService...');
+          return AgentTeamService();
+        }),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
@@ -145,6 +156,7 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _ready = false;
+  late StreamSubscription<User?> _authSub;
 
   @override
   void initState() {
@@ -153,15 +165,11 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _init() async {
-    // Wait for auth state to settle
     final auth = context.read<AuthService>();
-    await for (final user in auth.authStateChanges()) {
-      // Once we have a definite state (user or null), proceed
-      break;
-    }
-    if (mounted) {
-      setState(() => _ready = true);
-    }
+    _authSub = auth.authStateChanges().listen((_) {
+      if (mounted) setState(() => _ready = true);
+      _authSub.cancel();
+    });
   }
 
   @override
@@ -182,6 +190,16 @@ class _AuthGateState extends State<AuthGate> {
         if (snap.data == false) {
           return const OnboardingScreen();
         }
+        // Seed services after frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            context.read<ApprovalService>().seedDefaults();
+            context.read<ConnectedServicesService>().seedDefaults();
+            context.read<AgentTeamService>().seedTeam();
+          } catch (e) {
+            debugPrint('Seed error: $e');
+          }
+        });
         return const HomeScreen();
       },
     );
