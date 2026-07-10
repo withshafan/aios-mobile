@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
@@ -187,9 +188,11 @@ class ChatScreenState extends State<ChatScreen> {
     final isUser = message.isUser;
     final timestamp = message.timestamp;
     final timeStr = DateFormat('HH:mm').format(timestamp);
+    final content = message.content;
 
+    Widget bubble;
     if (isUser) {
-      return Align(
+      bubble = Align(
         alignment: Alignment.centerRight,
         child: Container(
           margin: const EdgeInsets.only(bottom: space2, left: space10),
@@ -211,7 +214,7 @@ class ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: Image.network(message.imageUrl!),
                 ),
-              Text(message.content, style: TextStyle(color: theme.textPrimary)),
+              Text(content, style: TextStyle(color: theme.textPrimary)),
               if (message.sources != null && message.sources!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
@@ -239,7 +242,7 @@ class ChatScreenState extends State<ChatScreen> {
         ).animate().fadeIn(duration: 200.ms).move(begin: const Offset(0, 10), end: const Offset(0, 0)),
       );
     } else {
-      return Align(
+      bubble = Align(
         alignment: Alignment.centerLeft,
         child: Padding(
           padding: const EdgeInsets.only(bottom: space3, right: space8),
@@ -266,7 +269,7 @@ class ChatScreenState extends State<ChatScreen> {
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Image.network(message.imageUrl!),
                       ),
-                    Text(message.content, style: TextStyle(color: theme.textPrimary, height: 1.5)),
+                    Text(content, style: TextStyle(color: theme.textPrimary, height: 1.5)),
                     if (message.sources != null && message.sources!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
@@ -296,6 +299,19 @@ class ChatScreenState extends State<ChatScreen> {
         ).animate().fadeIn(duration: 200.ms).move(begin: const Offset(0, 8), end: const Offset(0, 0)),
       );
     }
+
+    return GestureDetector(
+      onLongPress: () {
+        Clipboard.setData(ClipboardData(text: content));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Copied to clipboard'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      },
+      child: bubble,
+    );
   }
 
   Widget _buildInputArea(AuraTheme theme) {
