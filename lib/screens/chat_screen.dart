@@ -84,8 +84,11 @@ class ChatScreenState extends State<ChatScreen> {
       widget.voice.speak(response.text);
 
 
-    } catch (e) {
-      await memory.sendMessage('Sorry, something went wrong.', isUser: false);
+    } catch (e, stack) {
+      final String eStr = e.toString();
+      final errorMsg = '❌ Error: ${eStr.length > 200 ? eStr.substring(0, 200) : eStr}';
+      await memory.sendMessage(errorMsg, isUser: false);
+      debugPrint('Gemini call failed: $e\n$stack');
     } finally {
       setState(() => _isLoading = false);
     }
