@@ -34,9 +34,11 @@ class OpenRouterService {
         headers: {
           'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://github.com/withshafan/aios-mobile',
+          'X-Title': 'AURA AIOS',
         },
         body: jsonEncode({
-          'model': 'meta-llama/llama-3.2-3b-instruct:free',   // free model
+          'model': 'qwen/qwen-2.5-7b-instruct:free',   // free model
           'messages': messages,
         }),
       );
