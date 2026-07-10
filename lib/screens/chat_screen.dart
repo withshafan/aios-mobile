@@ -4,6 +4,7 @@ import '../services/memory_service.dart';
 import '../services/task_service.dart';
 import '../services/gemini_service.dart';
 import '../services/voice_service.dart';
+import '../services/email_service.dart';
 import '../models/chat_message.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -62,6 +63,43 @@ class ChatScreenState extends State<ChatScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Task "${cmd.title}" created!')),
         );
+      }
+
+      if (response.emailToSend != null) {
+        final cmd = response.emailToSend!;
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Send email?'),
+            content: Text('To: ${cmd.to}\nSubject: ${cmd.subject}\nBody: ${cmd.body}'),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
+              TextButton(
+                child: const Text('Send'),
+                onPressed: () => Navigator.pop(ctx, true),
+              ),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          final emailService = EmailService();
+          try {
+            final result = await emailService.sendEmail(
+              to: cmd.to,
+              subject: cmd.subject,
+              body: cmd.body,
+            );
+            await memory.sendMessage(result, isUser: false);
+            widget.voice.speak(result);
+          } catch (e) {
+            await memory.sendMessage('Failed to send email: $e', isUser: false);
+          }
+        } else {
+          await memory.sendMessage('Email cancelled.', isUser: false);
+        }
       }
     } catch (e) {
       await memory.sendMessage('Sorry, something went wrong.', isUser: false);

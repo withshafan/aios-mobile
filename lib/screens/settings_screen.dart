@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import 'email_config_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -42,6 +43,17 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 40),
+        ListTile(
+          leading: const Icon(Icons.email),
+          title: const Text('Email Configuration'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EmailConfigScreen()),
+            );
+          },
+        ),
+        const Divider(),
         ListTile(
           leading: const Icon(Icons.info_outline),
           title: const Text('App Version'),
