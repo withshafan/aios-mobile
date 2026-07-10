@@ -23,6 +23,9 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
   process_run: ^1.1.0
+  path_provider: ^2.1.4
+  file_picker: ^8.1.4
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
