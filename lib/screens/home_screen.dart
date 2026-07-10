@@ -52,6 +52,11 @@ import 'connected_services_screen.dart';
 import 'unified_search_screen.dart';
 import 'research_mission_screen.dart';
 
+import 'llm_providers_screen.dart';
+import 'agent_team_screen.dart';
+import 'self_programming_screen.dart';
+import 'ai_os_kernel_dashboard.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -244,6 +249,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 // Show a simple info or test screen (optional)
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Multi-LLM orchestrator active in background')));
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.hub),
+              title: const Text('LLM Providers'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LLMProvidersScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.groups),
+              title: const Text('AI Team'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AgentTeamScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('Self-Programming'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SelfProgrammingScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.dashboard),
+              title: const Text('AI OS Kernel'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AIOSKernelDashboard()));
               },
             ),
             const Divider(),

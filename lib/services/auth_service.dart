@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/connected_services_service.dart';
+import '../services/multi_llm_service.dart';
+import '../services/agent_team_service.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -38,6 +40,9 @@ class AuthService extends ChangeNotifier {
       await _auth.signInWithCredential(credential);
       if (_auth.currentUser != null) {
         await ConnectedServicesService.seedAvailableServices(FirebaseFirestore.instance, _auth.currentUser!.uid);
+        await MultiLLMService.seedDefaults(FirebaseFirestore.instance, _auth.currentUser!.uid);
+        final teamService = AgentTeamService();
+        await teamService.seedTeam();
       }
       notifyListeners();
     } catch (e) {
