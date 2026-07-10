@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'deepseek_service.dart';
+import 'openrouter_service.dart';
 import 'browser_service.dart';
 
 class TaskRunnerService extends ChangeNotifier {
-  final DeepSeekService _deepseek;
+  final OpenRouterService _aiService;
   final BrowserService _browserService;
 
   bool _isRunning = false;
@@ -11,14 +11,14 @@ class TaskRunnerService extends ChangeNotifier {
   String _status = '';
   String get status => _status;
 
-  TaskRunnerService(this._deepseek, this._browserService);
+  TaskRunnerService(this._aiService, this._browserService);
 
   Future<void> executeGoal(String goal) async {
     _isRunning = true;
     _status = 'Planning...';
     notifyListeners();
 
-    final planResponse = await _deepseek.sendMessage(
+    final planResponse = await _aiService.sendMessage(
       'Break this goal into a step-by-step plan and then execute each step using available tools. Goal: $goal',
       null,
     );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import '../services/deepseek_service.dart';
+import '../services/openrouter_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -30,7 +30,7 @@ class _ResearchMissionScreenState extends State<ResearchMissionScreen> {
       _progressLog = 'Starting $hours hour(s) research on "$topic"...\n';
     });
 
-    final deepseek = DeepSeekService(
+    final _aiService = OpenRouterService(
       context.read<AnalyticsService>(),
     );
 
@@ -41,7 +41,7 @@ class _ResearchMissionScreenState extends State<ResearchMissionScreen> {
     while (DateTime.now().isBefore(endTime)) {
       cycle++;
       final prompt = 'Research cycle $cycle for "$topic". Provide new findings, sources, and key insights.';
-      final response = await deepseek.sendMessage(prompt, null);
+      final response = await _aiService.sendMessage(prompt, null);
       setState(() {
         _progressLog += '--- Cycle $cycle ---\n${response.text}\n\n';
       });

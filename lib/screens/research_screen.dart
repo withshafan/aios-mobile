@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/deepseek_service.dart';
+import '../services/openrouter_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -29,13 +29,13 @@ class _ResearchScreenState extends State<ResearchScreen> {
       _progress = 'Researching...';
     });
 
-    final deepseek = DeepSeekService(
+    final _aiService = OpenRouterService(
       context.read<AnalyticsService>(),
     );
 
     // Simulate 3 research cycles
     for (int i = 0; i < 3; i++) {
-      final response = await deepseek.sendMessage(
+      final response = await _aiService.sendMessage(
         'Research about $topic. Give me key findings and sources.',
         null,
       );

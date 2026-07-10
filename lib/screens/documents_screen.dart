@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/deepseek_service.dart';
+import '../services/openrouter_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/analytics_service.dart';
@@ -15,7 +15,7 @@ class DocumentsScreen extends StatefulWidget {
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
   final TextEditingController _promptController = TextEditingController();
-  late final DeepSeekService _deepseek;
+  late final OpenRouterService _aiService;
   String _generatedContent = '';
   String _title = '';
   bool _isGenerating = false;
@@ -23,7 +23,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   @override
   void initState() {
     super.initState();
-    _deepseek = DeepSeekService(context.read<AnalyticsService>());
+    _aiService = OpenRouterService(context.read<AnalyticsService>());
   }
 
   Future<void> _generate() async {
@@ -32,7 +32,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     setState(() => _isGenerating = true);
     _title = topic.length > 50 ? '${topic.substring(0, 50)}...' : topic;
     try {
-      final response = await _deepseek.sendMessage(
+      final response = await _aiService.sendMessage(
         'Write a professional document about: $topic. Return only the plain text, no markdown.',
         null, // no history needed
       );

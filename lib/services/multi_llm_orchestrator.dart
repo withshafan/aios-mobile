@@ -1,6 +1,7 @@
 import 'plugin_service.dart';
 import 'analytics_service.dart';
 import 'deepseek_service.dart';
+import 'openrouter_service.dart';
 
 class MultiLLMOrchestrator {
   final PluginService _pluginService;
@@ -9,8 +10,8 @@ class MultiLLMOrchestrator {
   MultiLLMOrchestrator(this._pluginService, this._analyticsService);
 
   Future<String> processPrompt(String prompt, {bool complexReasoning = false}) async {
-    final deepseek = DeepSeekService(_analyticsService);
-    final response = await deepseek.sendMessage(prompt, null);
+    final aiService = OpenRouterService(_analyticsService);
+    final response = await aiService.sendMessage(prompt, null);
     return response.text;
   }
 }
