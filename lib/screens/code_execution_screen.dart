@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 
@@ -23,7 +23,7 @@ class _CodeExecutionScreenState extends State<CodeExecutionScreen> {
     // Use DeepSeek to predict the output (simulated execution)
     // We instantiate a temporary DeepSeekService just to get the response.
     // Assuming context.read gets the instances correctly.
-    final aiService = context.read<AiChatService>(); 
+    final aiService = context.read<SimpleAiService>(); 
     final responseText = await aiService.sendMessage(
       userMessage: 'Execute the following code and return only the raw output (do not explain):\n```\n$code\n```',
     );
@@ -68,3 +68,4 @@ class _CodeExecutionScreenState extends State<CodeExecutionScreen> {
     );
   }
 }
+

@@ -14,7 +14,7 @@ import '../widgets/animated_orb.dart';
 import '../widgets/sources_card.dart';
 import '../services/memory_service.dart';
 import '../services/file_extraction_service.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/simple_ai_service.dart';
 import '../services/image_generation_service.dart';
 import '../utils/image_utils.dart';
@@ -23,7 +23,7 @@ import 'vision_mode_screen.dart';
 import 'live_call_screen.dart';
 
 class NovaChatScreen extends StatefulWidget {
-  final AiChatService aiService;
+  final SimpleAiService aiService;
 
   const NovaChatScreen({super.key, required this.aiService});
 
@@ -631,3 +631,4 @@ class _QuickAction {
 
   const _QuickAction(this.label, this.icon, [this.onTap]);
 }
+

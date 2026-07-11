@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'services/ai_chat_service.dart';
+import 'services/simple_ai_service.dart';
 import 'services/simple_ai_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -90,14 +90,6 @@ class MyApp extends StatelessWidget {
     debugPrint('Building MyApp...');
     return MultiProvider(
       providers: [
-        Provider(create: (_) {
-          debugPrint('Creating AiChatService...');
-          return AiChatService(
-            geminiApiKey: dotenv.env['GEMINI_API_KEY'] ?? '',
-            openRouterApiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
-            modelOverride: selectedModel,
-          );
-        }),
         Provider<SimpleAiService>(
           create: (_) => SimpleAiService(),
         ),
@@ -114,8 +106,8 @@ class MyApp extends StatelessWidget {
           debugPrint('Creating TaskService...');
           return TaskService();
         }),
-        ChangeNotifierProxyProvider2<AiChatService, BrowserService, TaskRunnerService>(
-          create: (ctx) => TaskRunnerService(ctx.read<AiChatService>(), ctx.read<BrowserService>()),
+        ChangeNotifierProxyProvider2<SimpleAiService, BrowserService, TaskRunnerService>(
+          create: (ctx) => TaskRunnerService(ctx.read<SimpleAiService>(), ctx.read<BrowserService>()),
           update: (ctx, ai, browser, previous) => previous ?? TaskRunnerService(ai, browser),
         ),
         ChangeNotifierProxyProvider<TaskService, WorkflowService>(
@@ -272,3 +264,4 @@ class _AuthGateState extends State<AuthGate> {
     );
   }
 }
+

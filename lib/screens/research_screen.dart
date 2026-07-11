@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -29,7 +29,7 @@ class _ResearchScreenState extends State<ResearchScreen> {
       _progress = 'Researching...';
     });
 
-    final _aiService = context.read<AiChatService>();
+    final _aiService = context.read<SimpleAiService>();
 
     // Simulate 3 research cycles
     for (int i = 0; i < 3; i++) {
@@ -83,3 +83,4 @@ class _ResearchScreenState extends State<ResearchScreen> {
     );
   }
 }
+

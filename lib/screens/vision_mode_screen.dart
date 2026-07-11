@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
 import '../theme/nova_theme.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../utils/image_utils.dart';
 
 class VisionModeScreen extends StatefulWidget {
@@ -52,11 +52,10 @@ class _VisionModeScreenState extends State<VisionModeScreen> {
     try {
       final file = await _camera!.takePicture();
       final base64 = await ImageUtils.fileToBase64DataUri(File(file.path));
-      final aiService = context.read<AiChatService>();
+      final aiService = context.read<SimpleAiService>();
       final response = await aiService.sendMessage(
         userMessage: 'Describe what you see in this image briefly (1-2 sentences).',
         imageBase64: base64,
-        modelOverride: 'google/gemma-4-26b-a4b',
       );
       if (mounted && !response.startsWith('❌')) {
         setState(() => _aiDescription = response);
@@ -166,3 +165,4 @@ class _VisionModeScreenState extends State<VisionModeScreen> {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/analytics_service.dart';
 import '../services/plugin_service.dart';
 import '../services/system_prompt_service.dart';
@@ -30,7 +30,7 @@ class _ResearchMissionScreenState extends State<ResearchMissionScreen> {
       _progressLog = 'Starting $hours hour(s) research on "$topic"...\n';
     });
 
-    final _aiService = context.read<AiChatService>();
+    final _aiService = context.read<SimpleAiService>();
 
     final startTime = DateTime.now();
     final endTime = startTime.add(Duration(hours: hours));
@@ -88,3 +88,4 @@ class _ResearchMissionScreenState extends State<ResearchMissionScreen> {
     );
   }
 }
+

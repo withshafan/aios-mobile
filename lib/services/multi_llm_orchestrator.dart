@@ -1,11 +1,11 @@
 import 'plugin_service.dart';
 import 'analytics_service.dart';
-import 'ai_chat_service.dart';
+import 'simple_ai_service.dart';
 
 class MultiLLMOrchestrator {
   final PluginService _pluginService;
   final AnalyticsService _analyticsService;
-  final AiChatService _aiService;
+  final SimpleAiService _aiService;
 
   MultiLLMOrchestrator(this._pluginService, this._analyticsService, this._aiService);
 
@@ -14,3 +14,4 @@ class MultiLLMOrchestrator {
     return responseText;
   }
 }
+

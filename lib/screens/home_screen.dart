@@ -5,7 +5,7 @@ import '../utils/responsive.dart';
 import '../services/auth_service.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/browser_service.dart';
@@ -33,7 +33,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final AiChatService _aiService;
+  late final SimpleAiService _aiService;
   int _selectedIndex = 0;
 
   final List<_NavDestination> _navItems = const [
@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     final pluginService = context.read<PluginService>();
     final analyticsService = context.read<AnalyticsService>();
-    _aiService = context.read<AiChatService>();
+    _aiService = context.read<SimpleAiService>();
     context.read<MemoryService>().loadMessages();
   }
 
@@ -197,3 +197,4 @@ class _NavDestination {
   final IconData icon;
   const _NavDestination(this.label, this.icon);
 }
+

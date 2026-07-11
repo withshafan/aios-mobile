@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../theme/tokens.dart';
 import '../services/document_service.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/plugin_service.dart';
 import '../services/analytics_service.dart';
 
@@ -18,7 +18,7 @@ class DocumentsScreen extends StatefulWidget {
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
   final TextEditingController _promptController = TextEditingController();
-  late final AiChatService _aiService;
+  late final SimpleAiService _aiService;
   String _generatedContent = '';
   String _title = '';
   bool _isGenerating = false;
@@ -27,7 +27,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   void initState() {
     super.initState();
     // Get AI service from provider
-    _aiService = context.read<AiChatService>();
+    _aiService = context.read<SimpleAiService>();
   }
 
   Future<void> _generate() async {
@@ -175,3 +175,4 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     );
   }
 }
+

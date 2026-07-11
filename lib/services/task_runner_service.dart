@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'ai_chat_service.dart';
+import 'simple_ai_service.dart';
 import 'browser_service.dart';
 
 class TaskRunnerService extends ChangeNotifier {
-  final AiChatService _aiService;
+  final SimpleAiService _aiService;
   final BrowserService _browserService;
 
   bool _isRunning = false;
@@ -30,3 +30,4 @@ class TaskRunnerService extends ChangeNotifier {
     notifyListeners();
   }
 }
+

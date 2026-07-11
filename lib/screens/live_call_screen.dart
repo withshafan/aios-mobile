@@ -5,7 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/simple_ai_service.dart';
 import '../services/voice_service.dart';
 import '../utils/image_utils.dart';
@@ -441,3 +441,4 @@ class _LiveCallScreenState extends State<LiveCallScreen>
     );
   }
 }
+

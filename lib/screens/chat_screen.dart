@@ -18,9 +18,9 @@
 //   - Android AndroidManifest.xml: CAMERA and RECORD_AUDIO permissions.
 //
 // Usage:
-//   ChatScreen(sendMessage: myAiChatService.sendMessage)
+//   ChatScreen(sendMessage: mySimpleAiService.sendMessage)
 //
-// Where `myAiChatService.sendMessage` matches the signature:
+// Where `mySimpleAiService.sendMessage` matches the signature:
 //   Future<String> Function({required String userMessage,
 //                             List<Map<String, String>> history})
 // ============================================================================
@@ -30,7 +30,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import '../utils/image_utils.dart';
-import '../services/ai_chat_service.dart';
+import '../services/simple_ai_service.dart';
 import 'live_call_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -206,9 +206,9 @@ class DefaultDocumentTextExtractor implements DocumentTextExtractor {
 // EXTERNAL SERVICE CONTRACT
 // ============================================================================
 
-/// Matches the signature of an external AiChatService.sendMessage method.
+/// Matches the signature of an external SimpleAiService.sendMessage method.
 /// Pass a real implementation's method in directly, e.g.:
-///   ChatScreen(sendMessage: myAiChatService.sendMessage)
+///   ChatScreen(sendMessage: mySimpleAiService.sendMessage)
 typedef SendMessageFn = Future<String> Function({
   required String userMessage,
   List<Map<String, String>> history,
@@ -707,7 +707,7 @@ class _ChatScreenState extends State<ChatScreen> {
           icon: const Icon(Icons.call),
           tooltip: 'Live call',
           onPressed: () {
-            final aiService = context.read<AiChatService>();
+            final aiService = context.read<SimpleAiService>();
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => LiveCallScreen(aiService: aiService),
@@ -1495,3 +1495,4 @@ class _SendButton extends StatelessWidget {
     );
   }
 }
+
