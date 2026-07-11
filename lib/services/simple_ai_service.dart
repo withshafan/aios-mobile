@@ -5,11 +5,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SimpleAiService {
   static const List<String> _models = [
-    'meta-llama/llama-3.2-3b-instruct:free',
+    'mistralai/mistral-7b-instruct:free',
   ];
 
   static const Duration _baseBackoff = Duration(seconds: 8);
-  static const int _maxRetries = 3;
+  static const int _maxRetries = 1;
 
   Future<bool> testConnection() async {
     try {
