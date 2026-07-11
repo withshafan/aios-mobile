@@ -7,7 +7,9 @@ class AiChatService {
   AiChatService({
     required this.openRouterApiKey,
     this.modelOverride,
-  });
+  }) {
+    debugPrint('🔑 AiChatService key: ${openRouterApiKey.length > 10 ? openRouterApiKey.substring(0, 10) : openRouterApiKey}...');
+  }
 
   Future<String> sendMessage({
     required String userMessage,

@@ -37,6 +37,8 @@ import 'services/voice_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await dotenv.load(fileName: ".env");
+
   try {
     await Firebase.initializeApp();
     FirebaseFirestore.instance.settings = const Settings(
@@ -47,8 +49,6 @@ void main() async {
     runApp(const FirebaseInitErrorScreen());
     return; // Stop execution – do NOT rethrow
   }
-
-  await dotenv.load(fileName: ".env");
 
   final prefs = await SharedPreferences.getInstance();
   final selectedModel = prefs.getString('selected_model');

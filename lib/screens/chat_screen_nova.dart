@@ -18,6 +18,7 @@ import '../services/ai_chat_service.dart';          // ← FIXED
 import '../utils/image_utils.dart';
 import 'voice_mode_screen.dart';
 import 'vision_mode_screen.dart';
+import 'live_call_screen.dart';
 
 class NovaChatScreen extends StatefulWidget {
   final AiChatService aiService;                    // ← FIXED
@@ -246,14 +247,28 @@ class _NovaChatScreenState extends State<NovaChatScreen>
           const AnimatedOrb(size: 32, isActive: false),
           const SizedBox(width: 12),
           const Text('AURA', style: TextStyle(fontWeight: FontWeight.w600)),
-          const Spacer(),
-          IconButton(
-            icon: Icon(_speakerOn ? Icons.volume_up : Icons.volume_off,
-                color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
-            onPressed: () => setState(() => _speakerOn = !_speakerOn),
-          ),
         ],
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.call, color: NovaColors.accent),
+          tooltip: 'Live call',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => LiveCallScreen(aiService: widget.aiService),
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: Icon(_speakerOn ? Icons.volume_up : Icons.volume_off,
+              color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
+          onPressed: () => setState(() => _speakerOn = !_speakerOn),
+        ),
+        const SizedBox(width: 8),
+      ],
     );
   }
 
