@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'services/ai_chat_service.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'theme/tokens.dart';
 import 'theme/aura_theme.dart';
 import 'services/auth_service.dart';
@@ -34,11 +36,16 @@ void main() async {
 
   try {
     await Firebase.initializeApp();
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+    );
   } catch (e) {
     debugPrint('Firebase init error: $e');
     runApp(const FirebaseInitErrorScreen());
     return; // Stop execution – do NOT rethrow
   }
+
+  await dotenv.load(fileName: ".env");
 
   runApp(const MyApp());
 }
@@ -78,8 +85,8 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) {
           debugPrint('Creating AiChatService...');
           return AiChatService(
-            openRouterApiKey: 'YOUR_OPENROUTER_KEY',
-            huggingFaceApiToken: 'YOUR_HUGGINGFACE_KEY',
+            openRouterApiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
+            huggingFaceApiToken: dotenv.env['HUGGINGFACE_API_KEY'] ?? '',
           );
         }),
         ChangeNotifierProvider(create: (_) {

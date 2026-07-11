@@ -98,13 +98,22 @@ class OpenRouterService {
   Future<ChatResult> sendMessage({
     required String userMessage,
     List<Map<String, String>> history = const [],
+    String? imageBase64,
     List<String> preferredModels = const [
       'meta-llama/llama-3.2-3b-instruct:free',
       'qwen/qwen-2.5-7b-instruct:free',
       'google/gemma-2-9b-it:free',
     ],
   }) async {
-    final chain = <String>[...preferredModels];
+    final chain = <String>[];
+    if (imageBase64 != null) {
+      chain.addAll([
+        'google/gemini-2.0-flash-lite-preview-02-05:free',
+        'meta-llama/llama-3.2-11b-vision-instruct:free',
+        'qwen/qwen2.5-vl-72b-instruct:free'
+      ]);
+    }
+    chain.addAll(preferredModels);
 
     try {
       final live = await fetchFreeModelIds();
@@ -123,7 +132,7 @@ class OpenRouterService {
 
     for (final model in chain) {
       try {
-        final content = await _attempt(model, userMessage, history);
+        final content = await _attempt(model, userMessage, history, imageBase64);
         return ChatResult(content: content, modelUsed: model);
       } on _RetryableError catch (e) {
         errors.add('$model -> ${e.message}');
@@ -140,12 +149,20 @@ class OpenRouterService {
     String model,
     String userMessage,
     List<Map<String, String>> history,
+    String? imageBase64,
   ) async {
+    final dynamic userContent = imageBase64 != null
+        ? [
+            {"type": "text", "text": userMessage.isNotEmpty ? userMessage : "Describe this image."},
+            {"type": "image_url", "image_url": {"url": imageBase64}},
+          ]
+        : userMessage;
+
     final body = jsonEncode({
       'model': model,
       'messages': [
         ...history,
-        {'role': 'user', 'content': userMessage},
+        {'role': 'user', 'content': userContent},
       ],
     });
 

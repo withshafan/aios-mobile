@@ -6,7 +6,6 @@ import '../services/auth_service.dart';
 import '../services/memory_service.dart';
 import '../services/task_service.dart';
 import '../services/ai_chat_service.dart';
-import '../services/voice_service.dart';
 import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/browser_service.dart';
@@ -35,9 +34,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final AiChatService _aiService;
-  final VoiceService _voice = VoiceService();
   int _selectedIndex = 0;
-  final GlobalKey<ChatScreenState> chatKey = GlobalKey<ChatScreenState>();
 
   final List<_NavDestination> _navItems = const [
     _NavDestination('Chat', Icons.chat),
@@ -54,25 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final analyticsService = context.read<AnalyticsService>();
     _aiService = context.read<AiChatService>();
     context.read<MemoryService>().loadMessages();
-    _setupWakeWord();
-  }
-
-  void _setupWakeWord() {
-    _voice.onWakeWordDetected = () async {
-      if (!mounted) return;
-      setState(() => _selectedIndex = 0);
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (!mounted) return;
-      final spoken = await _voice.listen(timeout: const Duration(seconds: 7));
-      if (spoken != null && spoken.isNotEmpty && mounted) {
-        chatKey.currentState?.sendVoiceCommand(spoken);
-      }
-    };
   }
 
   Widget _buildScreen(int index) {
+    // Keep state alive for ChatScreen by using IndexedStack 
+    // or just switch screens as before. Since ChatProvider initializes and holds history,
+    // switching tabs will lose local ChatProvider state.
+    // If you want chat state to persist across tab switches, we can use IndexedStack,
+    // but a standard switch was used originally. 
     switch (index) {
-      case 0: return ChatScreen(aiService: _aiService, voice: context.read<VoiceService>(), key: chatKey);
+      case 0: return ChatScreen(sendMessage: _aiService.sendMessage);
       case 1: return const DashboardScreen();
       case 2: return const TasksScreen();
       case 3: return const WorkflowScreen();
@@ -95,22 +83,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPhoneLayout() {
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectedIndex == 0 ? null : AppBar(
         title: Text(_navItems[_selectedIndex].label),
-        actions: [
-          IconButton(
-            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
-            onPressed: () {
-              if (context.read<VoiceService>().wakeWordActive) {
-                context.read<VoiceService>().stopWakeWordListening();
-              } else {
-                context.read<VoiceService>().startWakeWordListening();
-              }
-            },
-          ),
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          ChatScreen(sendMessage: _aiService.sendMessage),
+          const DashboardScreen(),
+          const TasksScreen(),
+          const WorkflowScreen(),
+          const MoreScreen(),
         ],
       ),
-      body: _buildScreen(_selectedIndex),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (i) => setState(() => _selectedIndex = i),
@@ -123,20 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTabletLayout() {
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectedIndex == 0 ? null : AppBar(
         title: Text(_navItems[_selectedIndex].label),
-        actions: [
-          IconButton(
-            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
-            onPressed: () {
-              if (context.read<VoiceService>().wakeWordActive) {
-                context.read<VoiceService>().stopWakeWordListening();
-              } else {
-                context.read<VoiceService>().startWakeWordListening();
-              }
-            },
-          ),
-        ],
       ),
       body: Row(
         children: [
@@ -149,7 +122,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ).toList(),
           ),
           const VerticalDivider(width: 1),
-          Expanded(child: _buildScreen(_selectedIndex)),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                ChatScreen(sendMessage: _aiService.sendMessage),
+                const DashboardScreen(),
+                const TasksScreen(),
+                const WorkflowScreen(),
+                const MoreScreen(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -157,20 +141,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDesktopLayout() {
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectedIndex == 0 ? null : AppBar(
         title: Text(_navItems[_selectedIndex].label),
-        actions: [
-          IconButton(
-            icon: Icon(context.watch<VoiceService>().wakeWordActive ? Icons.mic : Icons.mic_none),
-            onPressed: () {
-              if (context.read<VoiceService>().wakeWordActive) {
-                context.read<VoiceService>().stopWakeWordListening();
-              } else {
-                context.read<VoiceService>().startWakeWordListening();
-              }
-            },
-          ),
-        ],
       ),
       body: Row(
         children: [
@@ -193,7 +165,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const VerticalDivider(width: 1),
-          Expanded(child: _buildScreen(_selectedIndex)),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                ChatScreen(sendMessage: _aiService.sendMessage),
+                const DashboardScreen(),
+                const TasksScreen(),
+                const WorkflowScreen(),
+                const MoreScreen(),
+              ],
+            ),
+          ),
         ],
       ),
     );

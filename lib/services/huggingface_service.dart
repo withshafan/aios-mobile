@@ -22,9 +22,23 @@ class HuggingFaceService {
   Future<String> sendMessage({
     required String userMessage,
     List<Map<String, String>> history = const [],
+    String? imageBase64,
     // Any small instruct model works well here; swap as needed.
     String model = 'meta-llama/Llama-3.2-3B-Instruct',
   }) async {
+    final dynamic userContent = imageBase64 != null
+        ? [
+            {"type": "text", "text": userMessage.isNotEmpty ? userMessage : "Describe this image."},
+            {"type": "image_url", "image_url": {"url": imageBase64}},
+          ]
+        : userMessage;
+
+    String selectedModel = model;
+    if (imageBase64 != null) {
+      // Use a vision model if an image is attached
+      selectedModel = 'meta-llama/Llama-3.2-11B-Vision-Instruct';
+    }
+
     http.Response res;
     try {
       res = await http
@@ -35,10 +49,10 @@ class HuggingFaceService {
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
-              'model': model,
+              'model': selectedModel,
               'messages': [
                 ...history,
-                {'role': 'user', 'content': userMessage},
+                {'role': 'user', 'content': userContent},
               ],
             }),
           )

@@ -18,11 +18,13 @@ class AiChatService {
   Future<String> sendMessage({
     required String userMessage,
     List<Map<String, String>> history = const [],
+    String? imageBase64,
   }) async {
     try {
       final result = await _openRouter.sendMessage(
         userMessage: userMessage,
         history: history,
+        imageBase64: imageBase64,
       );
       return result.content;
       // If you want to show which model answered, use result.modelUsed
@@ -32,6 +34,7 @@ class AiChatService {
       return _huggingFace.sendMessage(
         userMessage: userMessage,
         history: history,
+        imageBase64: imageBase64,
       );
     }
     // Note: a _FatalError from OpenRouter (bad API key) is rethrown as a
