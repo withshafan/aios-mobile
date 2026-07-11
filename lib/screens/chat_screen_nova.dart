@@ -141,23 +141,39 @@ class _NovaChatScreenState extends State<NovaChatScreen>
           modelOverride: modelId,
         );
 
+        // ✅ response is now a ChatResponse object, use .text and .isError
         setState(() {
           _messages.removeWhere((m) => m.id == thinkingId);
           if (response.isError) {
-            _messages.add(_ChatMessage(id: '${req.id}_err', text: response.text, isUser: false, status: 'Error'));
+            _messages.add(_ChatMessage(
+              id: '${req.id}_err',
+              text: response.text,       // ← .text
+              isUser: false,
+              status: 'Error',
+            ));
           } else {
-            _messages.add(_ChatMessage(id: '${req.id}_ans', text: response.text, isUser: false, status: 'Sent'));
+            _messages.add(_ChatMessage(
+              id: '${req.id}_ans',
+              text: response.text,       // ← .text
+              isUser: false,
+              status: 'Sent',
+            ));
           }
           _setStatus(req.id, 'Sent');
         });
 
         if (_speakerOn && !response.isError) {
-          _tts.speak(response.text);
+          _tts.speak(response.text);     // ← .text
         }
       } catch (_) {
         setState(() {
           _messages.removeWhere((m) => m.id == thinkingId);
-          _messages.add(_ChatMessage(id: '${req.id}_err', text: "Couldn't answer – tap to retry.", isUser: false, status: 'Error'));
+          _messages.add(_ChatMessage(
+            id: '${req.id}_err',
+            text: "Couldn't answer – tap to retry.",
+            isUser: false,
+            status: 'Error',
+          ));
           _setStatus(req.id, 'Error');
         });
       }
