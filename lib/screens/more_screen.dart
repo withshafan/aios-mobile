@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../theme/aura_theme.dart';
+import '../theme/nova_theme.dart';
 import 'memory_screen.dart';
 import 'android_screen.dart';
 import 'files_screen.dart';
@@ -29,7 +30,8 @@ class MoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context).extension<AuraTheme>()!;
+    final theme = Theme.of(context).extension<AuraTheme>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
       _MoreItem('Memory', Icons.memory, const MemoryScreen()),
       _MoreItem('Android Device', Icons.phone_android, const AndroidScreen()),
@@ -69,10 +71,10 @@ class MoreScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(space3),
                 decoration: BoxDecoration(
-                  color: theme.surfaceRaised,
+                  color: theme?.surfaceRaised ?? (isDark ? NovaColors.darkSurface : NovaColors.lightSurface),
                   borderRadius: BorderRadius.circular(radiusMd),
                 ),
-                child: Icon(item.icon, size: 32, color: AppColors.accentViolet),
+                child: Icon(item.icon, size: 32, color: NovaColors.accent),
               ),
               const SizedBox(height: space1),
               Text(item.label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),

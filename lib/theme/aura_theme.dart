@@ -77,3 +77,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     );
   }
 }
+
+extension AuraThemeSafe on BuildContext {
+  AuraTheme get auraTheme => Theme.of(this).extension<AuraTheme>() ?? AuraTheme.dark();
+}
