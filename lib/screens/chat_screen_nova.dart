@@ -14,15 +14,12 @@ import '../widgets/animated_orb.dart';
 import '../widgets/sources_card.dart';
 import '../services/memory_service.dart';
 import '../services/file_extraction_service.dart';
-import '../services/ai_chat_service.dart';          // ← FIXED
-import '../services/image_generation_service.dart'; // ← Added for image generation
-import '../utils/image_utils.dart';
-import 'voice_mode_screen.dart';
-import 'vision_mode_screen.dart';
-import 'live_call_screen.dart';
+import '../services/ai_chat_service.dart';
+import '../services/universal_ai_service.dart';
+import '../services/image_generation_service.dart';
 
 class NovaChatScreen extends StatefulWidget {
-  final AiChatService aiService;                    // ← FIXED
+  final AiChatService aiService;
 
   const NovaChatScreen({super.key, required this.aiService});
 
@@ -49,6 +46,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   bool _speakerOn = false;
   late final ImageGenerationService _imageGenService;
+  final UniversalAiService _ai = UniversalAiService();
 
   late final List<_QuickAction> _quickActions = [
     _QuickAction('Ask Anything', Icons.auto_awesome),
@@ -78,30 +76,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   String _newId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
 
-  String _selectModel(String userText, {bool hasImage = false}) {
-    // ── FREE MODEL AUTO‑SELECTION ──
-    if (hasImage) {
-      return 'meta-llama/llama-3.2-11b-vision-instruct:free';
-    }
 
-    final lower = userText.toLowerCase();
-    
-    // Coding / reasoning → Gemma 2B
-    if (lower.contains('code') || lower.contains('program') || 
-        lower.contains('debug') || lower.contains('function') ||
-        lower.contains('algorithm') || lower.contains('sql')) {
-      return 'google/gemma-2-2b-it:free';
-    }
-    
-    // Complex reasoning → Gemma 2B
-    if (lower.contains('explain') || lower.contains('compare') ||
-        lower.contains('analyze') || lower.contains('reason')) {
-      return 'google/gemma-2-2b-it:free';
-    }
-    
-    // Default – fast, general chat → Llama 3B
-    return 'meta-llama/llama-3.2-3b-instruct:free';
-  }
 
   void _sendMessage({String? text}) async {
     final userText = text ?? _controller.text.trim();
@@ -212,16 +187,9 @@ class _NovaChatScreenState extends State<NovaChatScreen>
           }
         }
 
-        final modelId = _selectModel(req.text, hasImage: imageDataUri != null);
-
-        final keyToUse = dotenv.env['OPENROUTER_API_KEY'] ?? '';
-
-        // ✅ Call AiChatService, get a String back
-        final replyText = await widget.aiService.sendMessage(
+        final replyText = await _ai.sendMessage(
           userMessage: req.text.isEmpty ? 'Hello!' : req.text,
           imageBase64: imageDataUri,
-          modelOverride: modelId,
-          apiKeyOverride: keyToUse,
         );
 
         final isError = replyText.startsWith('❌');

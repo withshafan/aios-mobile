@@ -6,6 +6,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/ai_chat_service.dart';
+import '../services/universal_ai_service.dart';
+import '../services/voice_service.dart';
 import '../utils/image_utils.dart';
 import '../services/screen_share_channel.dart';
 import '../theme/tokens.dart';
@@ -138,10 +140,9 @@ class _LiveCallScreenState extends State<LiveCallScreen>
     setState(() { _phase = CallPhase.thinking; _caption = text; });
 
     try {
-      final response = await widget.aiService.sendMessage(
+      final response = await UniversalAiService().sendMessage(
         userMessage: text,
         imageBase64: (_isVideoOn || _isScreenSharing) ? _latestFrameBase64 : null,
-        modelOverride: 'meta-llama/llama-3.2-3b-instruct:free',
       );
 
       // Check if response is an error
