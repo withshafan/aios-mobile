@@ -24,6 +24,8 @@ import 'services/attention_service.dart';
 import 'services/circuit_breaker_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/permission_onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/onboarding_service.dart';
 import 'screens/splash_screen.dart';
@@ -197,7 +199,7 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _ready = false;
-  late StreamSubscription<User?> _authSub;
+  bool _permissionsDone = false;
 
   @override
   void initState() {
@@ -207,21 +209,48 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _init() async {
     final auth = context.read<AuthService>();
-    _authSub = auth.authStateChanges().listen((_) {
-      if (mounted) setState(() => _ready = true);
-      _authSub.cancel();
+
+    // Check if permissions were already granted in a previous session
+    final prefs = await SharedPreferences.getInstance();
+    final permsDone = prefs.getBool('permissions_onboarded') ?? false;
+
+    if (mounted) {
+      setState(() {
+        _ready = true;
+        _permissionsDone = permsDone;
+      });
+    }
+
+    // Listen for auth state changes
+    auth.authStateChanges().listen((_) {
+      if (mounted) setState(() {});
     });
+  }
+
+  void _onPermissionsComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('permissions_onboarded', true);
+    if (mounted) {
+      setState(() => _permissionsDone = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_ready) {
-      return const SplashScreen();
-    }
+    if (!_ready) return const SplashScreen();
+
     final auth = context.watch<AuthService>();
-    if (auth.user == null) {
-      return const LoginScreen();
+
+    if (auth.user == null) return const LoginScreen();
+
+    // Show permission onboarding first, then regular onboarding
+    if (!_permissionsDone) {
+      return PermissionOnboardingScreen(
+        onComplete: _onPermissionsComplete,
+      );
     }
+
+    // Existing onboarding check
     return FutureBuilder<bool>(
       future: OnboardingService.isOnboardingComplete(),
       builder: (ctx, snap) {
