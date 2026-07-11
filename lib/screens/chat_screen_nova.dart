@@ -15,6 +15,7 @@ import '../widgets/sources_card.dart';
 import '../services/memory_service.dart';
 import '../services/file_extraction_service.dart';
 import '../services/ai_chat_service.dart';          // ← FIXED
+import '../services/image_generation_service.dart'; // ← Added for image generation
 import '../utils/image_utils.dart';
 import 'voice_mode_screen.dart';
 import 'vision_mode_screen.dart';
@@ -47,10 +48,11 @@ class _NovaChatScreenState extends State<NovaChatScreen>
   bool _isImageFile = false;
 
   bool _speakerOn = false;
+  late final ImageGenerationService _imageGenService;
 
-  final List<_QuickAction> _quickActions = [
+  late final List<_QuickAction> _quickActions = [
     _QuickAction('Ask Anything', Icons.auto_awesome),
-    _QuickAction('Create Image', Icons.image),
+    _QuickAction('Create Image', Icons.image, () => _showImagePromptDialog()),
     _QuickAction('Analyze', Icons.analytics),
     _QuickAction('Brainstorm', Icons.lightbulb),
     _QuickAction('Code', Icons.code),
@@ -61,6 +63,9 @@ class _NovaChatScreenState extends State<NovaChatScreen>
     super.initState();
     _tts.awaitSpeakCompletion(true);
     _tts.setQueueMode(1);
+    _imageGenService = ImageGenerationService(
+      apiToken: dotenv.env['HUGGINGFACE_API_KEY'] ?? '',
+    );
   }
 
   @override
@@ -103,6 +108,21 @@ class _NovaChatScreenState extends State<NovaChatScreen>
     if (userText.isEmpty && _attachedFile == null) return;
     _controller.clear();
 
+    // Detect image generation intent
+    final lowerText = userText.toLowerCase();
+    if (lowerText.contains('create image') || 
+        lowerText.contains('generate image') ||
+        lowerText.contains('make an image') ||
+        lowerText.contains('draw') ||
+        lowerText.contains('create a picture')) {
+      // Extract the prompt (everything after the trigger words)
+      final prompt = userText
+          .replaceAll(RegExp(r'(create|generate|make)\s*(an?\s*)?(image|picture|drawing)\s*(of\s*)?', caseSensitive: false), '')
+          .trim();
+      _generateImage(prompt.isNotEmpty ? prompt : userText);
+      return;
+    }
+
     final id = _newId();
     final imageFile = _attachedFile;
     final isImage = _isImageFile;
@@ -124,6 +144,50 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
     _queue.add(_QueuedRequest(id: id, text: userText, imageFile: imageFile, isImage: isImage));
     if (!_isProcessingQueue) _processQueue();
+  }
+
+  Future<void> _generateImage(String prompt) async {
+    if (prompt.isEmpty) {
+      setState(() => _messages.add(_ChatMessage(
+        id: _newId(),
+        text: 'Please describe the image you want.',
+        isUser: false,
+        status: 'Error',
+      )));
+      return;
+    }
+
+    final thinkingId = _newId();
+    setState(() => _messages.add(_ChatMessage(
+      id: thinkingId,
+      text: '🎨 Creating your image…',
+      isUser: false,
+      status: 'Thinking',
+    )));
+
+    try {
+      final imagePath = await _imageGenService.generateImage(prompt);
+      setState(() {
+        _messages.removeWhere((m) => m.id == thinkingId);
+        _messages.add(_ChatMessage(
+          id: _newId(),
+          text: 'Here is your image for: "$prompt"',
+          isUser: false,
+          status: 'Sent',
+          generatedImagePath: imagePath,
+        ));
+      });
+    } catch (e) {
+      setState(() {
+        _messages.removeWhere((m) => m.id == thinkingId);
+        _messages.add(_ChatMessage(
+          id: _newId(),
+          text: '❌ Failed to generate image: ${e.toString().substring(0, 80)}',
+          isUser: false,
+          status: 'Error',
+        ));
+      });
+    }
   }
 
   Future<void> _processQueue() async {
@@ -308,8 +372,12 @@ class _NovaChatScreenState extends State<NovaChatScreen>
             children: _quickActions.map((action) {
               return GestureDetector(
                 onTap: () {
-                  _controller.text = action.label;
-                  _sendMessage();
+                  if (action.onTap != null) {
+                    action.onTap!();
+                  } else {
+                    _controller.text = action.label;
+                    _sendMessage();
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -398,6 +466,16 @@ class _NovaChatScreenState extends State<NovaChatScreen>
                 height: 1.5,
               )),
           const SizedBox(height: 8),
+          if (msg.generatedImagePath != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(msg.generatedImagePath!),
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           if (!isError && msg.text.length > 50)
             SourcesCard(sources: [
               {'title': 'Web Search'},
@@ -516,6 +594,31 @@ class _NovaChatScreenState extends State<NovaChatScreen>
       ),
     );
   }
+
+  void _showImagePromptDialog() {
+    final promptController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Create Image'),
+        content: TextField(
+          controller: promptController,
+          decoration: const InputDecoration(hintText: 'A cat wearing a spacesuit...'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _generateImage(promptController.text);
+            },
+            child: const Text('Generate'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Data classes ──
@@ -525,6 +628,7 @@ class _ChatMessage {
   final bool isUser;
   final File? imageFile;
   final String? imageFileName;
+  final String? generatedImagePath;
   String status;
 
   _ChatMessage({
@@ -533,6 +637,7 @@ class _ChatMessage {
     required this.isUser,
     this.imageFile,
     this.imageFileName,
+    this.generatedImagePath,
     this.status = 'Sent',
   });
 }
@@ -549,5 +654,7 @@ class _QueuedRequest {
 class _QuickAction {
   final String label;
   final IconData icon;
-  const _QuickAction(this.label, this.icon);
+  final VoidCallback? onTap;
+
+  const _QuickAction(this.label, this.icon, [this.onTap]);
 }

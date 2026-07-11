@@ -1,18 +1,35 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 class ImageGenerationService {
-  // Uses a free placeholder API that returns a random image URL based on prompt.
-  // Replace with DALL-E/Stable Diffusion if you have an API key.
-  Future<String?> generateImage(String prompt) async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://api.unsplash.com/photos/random?query=${Uri.encodeComponent(prompt)}'),
-      );
-      // Unsplash requires a Client-ID for production, but for demo we use a simple placeholder.
-      // We'll return a static placeholder for now.
-    } catch (e) {
-      // Ignore
+  final String apiToken;
+
+  ImageGenerationService({required this.apiToken});
+
+  /// Generates an image and returns the local file path.
+  Future<String> generateImage(String prompt) async {
+    final response = await http.post(
+      Uri.parse('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1'),
+      headers: {
+        'Authorization': 'Bearer $apiToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'inputs': prompt,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/aura_generated_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(response.bodyBytes);
+      return file.path;
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['error'] ?? 'Image generation failed');
     }
-    return 'https://picsum.photos/400/300?random&text=${Uri.encodeComponent(prompt)}';
   }
 }
