@@ -64,9 +64,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
   void initState() {
     super.initState();
     _ai = context.read<SimpleAiService>();
-    _ai.testConnection().then((ok) {
-      debugPrint(ok ? '✅ Network is fine' : '❌ Network blocked');
-    });
     _tts.awaitSpeakCompletion(true);
     _tts.setQueueMode(1);
     _imageGenService = ImageGenerationService(
