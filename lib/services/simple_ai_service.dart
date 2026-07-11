@@ -41,6 +41,8 @@ class SimpleAiService {
     ];
 
     for (final model in _models) {
+      debugPrint('🔑 Using key: ${key.length > 12 ? key.substring(0, 12) : key}...');
+      debugPrint('📤 Sending request to: $model');
       try {
         final res = await http
             .post(
