@@ -15,7 +15,7 @@ import '../widgets/sources_card.dart';
 import '../services/memory_service.dart';
 import '../services/file_extraction_service.dart';
 import '../services/ai_chat_service.dart';
-import '../services/universal_ai_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/image_generation_service.dart';
 import '../utils/image_utils.dart';
 import 'voice_mode_screen.dart';
@@ -50,7 +50,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   bool _speakerOn = false;
   late final ImageGenerationService _imageGenService;
-  late final UniversalAiService _ai;
+  late final SimpleAiService _ai;
 
   late final List<_QuickAction> _quickActions = [
     _QuickAction('Ask Anything', Icons.auto_awesome),
@@ -63,7 +63,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
   @override
   void initState() {
     super.initState();
-    _ai = context.read<UniversalAiService>();
+    _ai = context.read<SimpleAiService>();
     _tts.awaitSpeakCompletion(true);
     _tts.setQueueMode(1);
     _imageGenService = ImageGenerationService(

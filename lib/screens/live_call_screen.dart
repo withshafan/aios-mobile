@@ -6,7 +6,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/ai_chat_service.dart';
-import '../services/universal_ai_service.dart';
+import '../services/simple_ai_service.dart';
 import '../services/voice_service.dart';
 import '../utils/image_utils.dart';
 import '../services/screen_share_channel.dart';
@@ -15,7 +15,7 @@ import '../theme/tokens.dart';
 enum CallPhase { connecting, listening, thinking, speaking, muted, permissionDenied, unsupported }
 
 class LiveCallScreen extends StatefulWidget {
-  final UniversalAiService aiService;
+  final SimpleAiService aiService;
   const LiveCallScreen({super.key, required this.aiService});
 
   @override
