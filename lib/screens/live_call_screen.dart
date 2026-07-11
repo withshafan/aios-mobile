@@ -129,8 +129,11 @@ class _LiveCallScreenState extends State<LiveCallScreen>
     );
   }
 
+  bool _apiInFlight = false;
+
   Future<void> _handleUtterance(String text) async {
-    if (!_active) return;
+    if (!_active || _apiInFlight) return;
+    _apiInFlight = true;
     await _speech.stop();
     setState(() { _phase = CallPhase.thinking; _caption = text; });
 
@@ -165,6 +168,8 @@ class _LiveCallScreenState extends State<LiveCallScreen>
         _caption = "Couldn't reach the AI — listening again.";
         _phase = CallPhase.muted;
       });
+    } finally {
+      _apiInFlight = false;
     }
   }
 

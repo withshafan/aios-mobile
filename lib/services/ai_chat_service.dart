@@ -4,10 +4,12 @@ import 'openrouter_service.dart';
 class AiChatService {
   final String openRouterApiKey;
   final String? modelOverride;
+  final String? fallbackModel;
 
   AiChatService({
     required this.openRouterApiKey,
     this.modelOverride,
+    this.fallbackModel,
   }) {
     debugPrint('🔑 AiChatService key: ${openRouterApiKey.length > 10 ? openRouterApiKey.substring(0, 10) : openRouterApiKey}...');
   }
@@ -24,7 +26,8 @@ class AiChatService {
 
     final service = OpenRouterService(
       apiKey: keyToUse,
-      model: modelOverride ?? this.modelOverride ?? 'tencent/hy3',
+      model: modelOverride ?? this.modelOverride ?? 'meta-llama/llama-3.2-3b-instruct:free',
+      fallbackModel: fallbackModel ?? 'qwen/qwen-2.5-7b-instruct:free',    // ← default fallback
     );
     final response = await service.sendMessage(
       userMessage: userMessage,
