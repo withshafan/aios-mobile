@@ -74,8 +74,20 @@ class _NovaChatScreenState extends State<NovaChatScreen>
   String _newId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
 
   String _selectModel(String userText, {bool hasImage = false}) {
-    // Use only FREE models – no credits needed
-    if (hasImage) return 'meta-llama/llama-3.2-11b-vision-instruct:free';
+    // ── FREE MODEL AUTO‑SELECTION ──
+    if (hasImage) {
+      return 'meta-llama/llama-3.2-11b-vision-instruct:free';
+    }
+
+    final lower = userText.toLowerCase();
+    
+    // Coding / reasoning tasks
+    if (lower.contains('code') || lower.contains('program') || 
+        lower.contains('debug') || lower.contains('function')) {
+      return 'qwen/qwen-2.5-7b-instruct:free';
+    }
+    
+    // Fast, simple chat (default)
     return 'meta-llama/llama-3.2-3b-instruct:free';
   }
 
