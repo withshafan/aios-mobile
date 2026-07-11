@@ -36,7 +36,21 @@ class _FatalError {
 }
 
 class OpenRouterService {
-  OpenRouterService({required this.apiKey});
+  // Model constants
+  static const String modelHy3 = 'tencent/hy3';                // Deep reasoning, agent workflows
+  static const String modelGemma = 'google/gemma-4-26b-a4b';   // Fast, multimodal, vision
+  static const String modelFast = 'google/gemma-2-2b-it:free'; // Free fallback for voice calls
+
+  // Which model to use by default
+  static const String defaultModel = modelHy3;
+
+  // Override per request
+  final String _modelOverride;
+
+  OpenRouterService({
+    required this.apiKey,
+    String? modelOverride,
+  }) : _modelOverride = modelOverride ?? defaultModel;
 
   final String apiKey;
   static const _base = 'https://openrouter.ai/api/v1';
@@ -99,6 +113,7 @@ class OpenRouterService {
     required String userMessage,
     List<Map<String, String>> history = const [],
     String? imageBase64,
+    String? modelOverride,
     List<String> preferredModels = const [
       'tencent/hy3',
       'google/gemma-4-26b-a4b',
@@ -108,7 +123,11 @@ class OpenRouterService {
       'google/gemma-2-9b-it:free',
     ],
   }) async {
+    final selectedModel = modelOverride ?? _modelOverride;
     final chain = <String>[];
+    
+    // Always attempt the selected model first
+    chain.add(selectedModel);
     if (imageBase64 != null) {
       chain.addAll([
         'google/gemini-2.0-flash-lite-preview-02-05:free',

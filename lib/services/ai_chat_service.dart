@@ -9,7 +9,8 @@ class AiChatService {
   AiChatService({
     required String openRouterApiKey,
     required String huggingFaceApiToken,
-  })  : _openRouter = OpenRouterService(apiKey: openRouterApiKey),
+    String? modelOverride,
+  })  : _openRouter = OpenRouterService(apiKey: openRouterApiKey, modelOverride: modelOverride),
         _huggingFace = HuggingFaceService(apiToken: huggingFaceApiToken);
 
   static const String _systemPrompt = '''
@@ -44,6 +45,7 @@ Always match the user's language and script in your response.
     required String userMessage,
     List<Map<String, String>> history = const [],
     String? imageBase64,
+    String? modelOverride,
   }) async {
     final modifiedHistory = <Map<String, String>>[
       {
@@ -58,6 +60,7 @@ Always match the user's language and script in your response.
         userMessage: userMessage,
         history: modifiedHistory,
         imageBase64: imageBase64,
+        modelOverride: modelOverride,
       );
       return result.content;
       // If you want to show which model answered, use result.modelUsed

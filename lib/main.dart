@@ -49,7 +49,10 @@ void main() async {
 
   await dotenv.load(fileName: ".env");
 
-  runApp(const MyApp());
+  final prefs = await SharedPreferences.getInstance();
+  final selectedModel = prefs.getString('selected_model');
+
+  runApp(MyApp(selectedModel: selectedModel));
 }
 
 class FirebaseInitErrorScreen extends StatelessWidget {
@@ -77,7 +80,8 @@ class FirebaseInitErrorScreen extends StatelessWidget {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String? selectedModel;
+  const MyApp({super.key, this.selectedModel});
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +93,7 @@ class MyApp extends StatelessWidget {
           return AiChatService(
             openRouterApiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
             huggingFaceApiToken: dotenv.env['HUGGINGFACE_API_KEY'] ?? '',
+            modelOverride: selectedModel,
           );
         }),
         ChangeNotifierProvider(create: (_) {

@@ -90,6 +90,7 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
       final response = await widget.aiService.sendMessage(
         userMessage: text,
         imageBase64: (_isVideoOn || _isScreenSharing) ? _latestFrameBase64 : null,
+        modelOverride: 'google/gemma-2-2b-it:free',
       );
       if (!mounted || !_active) return;
       setState(() {
