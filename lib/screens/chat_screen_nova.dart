@@ -140,13 +140,14 @@ class _NovaChatScreenState extends State<NovaChatScreen>
             ? 'tencent/hy3'
             : 'google/gemma-4-26b-a4b';
 
-        print('🔑 Using API key: ${dotenv.env['OPENROUTER_API_KEY']?.substring(0, 10)}...');
+        final apiKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
+        final service = OpenRouterService(apiKey: apiKey);
 
-        // Temporarily bypass AiChatService for debugging
-        final response = await OpenRouterService(
-          apiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
-          model: 'meta-llama/llama-3.2-3b-instruct:free',
-        ).sendMessage(userMessage: req.text.isEmpty ? 'Hello!' : req.text, imageBase64: imageDataUri);
+        final response = await service.sendMessage(
+          userMessage: req.text.isEmpty ? 'Hello!' : req.text,
+          imageBase64: imageDataUri,
+          modelOverride: modelId,
+        );
 
         setState(() {
           _messages.removeWhere((m) => m.id == thinkingId);
