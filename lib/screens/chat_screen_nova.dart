@@ -9,6 +9,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../services/openrouter_service.dart';
 import '../theme/nova_theme.dart';
 import '../widgets/animated_orb.dart';
 import '../widgets/sources_card.dart';
@@ -138,11 +140,13 @@ class _NovaChatScreenState extends State<NovaChatScreen>
             ? 'tencent/hy3'
             : 'google/gemma-4-26b-a4b';
 
-        final response = await widget.aiService.sendMessage(
-          userMessage: req.text.isEmpty ? 'Hello!' : req.text,
-          imageBase64: imageDataUri,
-          modelOverride: modelId,
-        );
+        print('🔑 Using API key: ${dotenv.env['OPENROUTER_API_KEY']?.substring(0, 10)}...');
+
+        // Temporarily bypass AiChatService for debugging
+        final response = await OpenRouterService(
+          apiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
+          model: 'meta-llama/llama-3.2-3b-instruct:free',
+        ).sendMessage(userMessage: req.text.isEmpty ? 'Hello!' : req.text, imageBase64: imageDataUri);
 
         setState(() {
           _messages.removeWhere((m) => m.id == thinkingId);
