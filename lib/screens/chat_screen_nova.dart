@@ -50,7 +50,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   bool _speakerOn = false;
   late final ImageGenerationService _imageGenService;
-  final UniversalAiService _ai = UniversalAiService();
+  late final UniversalAiService _ai;
 
   late final List<_QuickAction> _quickActions = [
     _QuickAction('Ask Anything', Icons.auto_awesome),
@@ -63,6 +63,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
   @override
   void initState() {
     super.initState();
+    _ai = context.read<UniversalAiService>();
     _tts.awaitSpeakCompletion(true);
     _tts.setQueueMode(1);
     _imageGenService = ImageGenerationService(

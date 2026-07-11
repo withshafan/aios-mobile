@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'services/ai_chat_service.dart';
+import 'services/universal_ai_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -97,6 +98,9 @@ class MyApp extends StatelessWidget {
             modelOverride: selectedModel,
           );
         }),
+        Provider<UniversalAiService>(
+          create: (_) => UniversalAiService(),
+        ),
         ChangeNotifierProvider(create: (_) {
           debugPrint('Creating AuthService...');
           return AuthService();

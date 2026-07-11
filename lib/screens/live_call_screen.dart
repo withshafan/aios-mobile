@@ -140,7 +140,7 @@ class _LiveCallScreenState extends State<LiveCallScreen>
     setState(() { _phase = CallPhase.thinking; _caption = text; });
 
     try {
-      final response = await UniversalAiService().sendMessage(
+      final response = await widget.aiService.sendMessage(
         userMessage: text,
         imageBase64: (_isVideoOn || _isScreenSharing) ? _latestFrameBase64 : null,
       );
