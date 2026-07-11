@@ -92,6 +92,7 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) {
           debugPrint('Creating AiChatService...');
           return AiChatService(
+            geminiApiKey: dotenv.env['GEMINI_API_KEY'] ?? '',
             openRouterApiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
             modelOverride: selectedModel,
           );

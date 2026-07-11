@@ -1,13 +1,19 @@
+import 'gemini_free_service.dart';
 import 'openrouter_service.dart';
 
 class AiChatService {
+  final String geminiApiKey;
   final String openRouterApiKey;
   final String? defaultModelOverride;
 
+  late final GeminiFreeService _gemini;
+
   AiChatService({
+    required this.geminiApiKey,
     required this.openRouterApiKey,
     String? modelOverride,
-  }) : defaultModelOverride = modelOverride;
+  })  : defaultModelOverride = modelOverride,
+        _gemini = GeminiFreeService(apiKey: geminiApiKey);
 
   Future<String> sendMessage({
     required String userMessage,
@@ -16,6 +22,22 @@ class AiChatService {
     String? modelOverride,
     String? apiKeyOverride,
   }) async {
+    // 1. Try Gemini first (unlimited free tier)
+    try {
+      if (geminiApiKey.isNotEmpty) {
+        return await _gemini.sendMessage(
+          userMessage: userMessage,
+          history: history,
+          imageBase64: imageBase64,
+        );
+      }
+    } catch (e) {
+      // If Gemini fails, we will fall back to OpenRouter
+      // Print the error in debug mode
+      print('Gemini failed: $e. Falling back to OpenRouter...');
+    }
+
+    // 2. Fallback to OpenRouter
     // Build messages array for Claude's service
     final messages = <Map<String, dynamic>>[];
 
@@ -58,8 +80,10 @@ class AiChatService {
       return await service.sendMessage(messages);
     } on OpenRouterException catch (e) {
       return e.isAllModelsBusy
-          ? '⚠️ All models are busy right now. Please wait a moment and try again.'
+          ? '⚠️ All AI services are temporarily unavailable. Please try again.'
           : '❌ ${e.message}';
+    } catch (_) {
+      return '⚠️ All AI services are temporarily unavailable. Please try again.';
     }
   }
 }
