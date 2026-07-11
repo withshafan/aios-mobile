@@ -4,7 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SimpleAiService {
-  static const String _model = 'meta-llama/llama-3.2-3b-instruct:free';
+  static const List<String> _models = [
+    'meta-llama/llama-3.2-3b-instruct:free',
+    'meta-llama/llama-3.2-1b-instruct:free',
+    'google/gemma-2-2b-it:free',
+  ];
 
   Future<String> sendMessage({
     required String userMessage,
@@ -34,49 +38,38 @@ class SimpleAiService {
       },
     ];
 
-    try {
-      final res = await http
-          .post(
-            Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
-            headers: {
-              'Authorization': 'Bearer $key',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({'model': _model, 'messages': messages}),
-          )
-          .timeout(const Duration(seconds: 30));
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        return data['choices'][0]['message']['content'] as String? ?? 'No response.';
-      }
-
-      if (res.statusCode == 429) {
-        debugPrint('⏳ Rate limited, waiting 5 seconds…');
-        await Future.delayed(const Duration(seconds: 5));
-        // Retry once after delay
-        final retry = await http
+    for (final model in _models) {
+      try {
+        final res = await http
             .post(
               Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
               headers: {
                 'Authorization': 'Bearer $key',
                 'Content-Type': 'application/json',
               },
-              body: jsonEncode({'model': _model, 'messages': messages}),
+              body: jsonEncode({'model': model, 'messages': messages}),
             )
             .timeout(const Duration(seconds: 30));
-        if (retry.statusCode == 200) {
-          final data = jsonDecode(retry.body);
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body);
           return data['choices'][0]['message']['content'] as String? ?? 'No response.';
         }
-        return '❌ Rate limited. Please wait a moment and try again.';
-      }
 
-      debugPrint('❌ API error ${res.statusCode}: ${res.body}');
-      return '❌ API error (${res.statusCode}). Try again shortly.';
-    } catch (e) {
-      debugPrint('❌ Network error: $e');
-      return '❌ Network error. Check your connection.';
+        if (res.statusCode == 429) {
+          debugPrint('⏳ Model $model rate limited, trying next model…');
+          continue; // Try the next model
+        }
+
+        debugPrint('❌ API error ${res.statusCode} for model $model: ${res.body}');
+        // If it's a non-429 error, we might still want to try the next model, but let's just continue
+        continue;
+      } catch (e) {
+        debugPrint('❌ Network error with model $model: $e');
+        continue; // Try next model on network error too
+      }
     }
+    
+    return '❌ All free models are currently rate limited or unavailable. Please try again shortly.';
   }
 }
