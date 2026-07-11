@@ -100,6 +100,8 @@ class OpenRouterService {
     List<Map<String, String>> history = const [],
     String? imageBase64,
     List<String> preferredModels = const [
+      'tencent/hy3',
+      'google/gemma-4-26b-a4b',
       'google/gemma-2-2b-it:free',
       'qwen/qwen-2.5-7b-instruct:free',
       'meta-llama/llama-3.2-3b-instruct:free',
@@ -114,15 +116,23 @@ class OpenRouterService {
         'qwen/qwen2.5-vl-72b-instruct:free'
       ]);
     }
-    chain.addAll(preferredModels);
-
     try {
       final live = await fetchFreeModelIds();
+      // Add preferred models only if they are actually free right now
+      for (final p in preferredModels) {
+        if (live.contains(p) || p.endsWith(':free')) {
+          if (!chain.contains(p)) chain.add(p);
+        }
+      }
+      // Then append any remaining free models from the live catalog
       for (final m in live) {
         if (!chain.contains(m)) chain.add(m);
       }
     } catch (_) {
-      // If listing fails, we still have the static chain + auto-router below.
+      // If listing fails, fallback to the preferred models
+      for (final p in preferredModels) {
+        if (!chain.contains(p)) chain.add(p);
+      }
     }
 
     // Ultimate fallback: OpenRouter's own router that picks a live free
