@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'openrouter_service.dart';
 
 class AiChatService {
