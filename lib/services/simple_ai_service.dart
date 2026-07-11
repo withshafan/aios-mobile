@@ -12,6 +12,23 @@ class SimpleAiService {
     'qwen/qwen-2.5-3b-instruct:free',
   ];
 
+  Future<bool> testConnection() async {
+    try {
+      final key = dotenv.env['OPENROUTER_API_KEY'] ?? '';
+      final res = await http.get(
+        Uri.parse('https://openrouter.ai/api/v1/models'),
+        headers: {
+          'Authorization': 'Bearer $key',
+        },
+      ).timeout(const Duration(seconds: 10));
+      debugPrint('🌐 Connection test: ${res.statusCode}');
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('🌐 Connection test FAILED: $e');
+      return false;
+    }
+  }
+
   Future<String> sendMessage({
     required String userMessage,
     List<Map<String, String>> history = const [],
