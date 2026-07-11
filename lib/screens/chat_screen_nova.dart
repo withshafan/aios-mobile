@@ -14,13 +14,14 @@ import '../widgets/animated_orb.dart';
 import '../widgets/sources_card.dart';
 import '../services/memory_service.dart';
 import '../services/file_extraction_service.dart';
-import '../services/openrouter_service.dart';
+import '../services/ai_chat_service.dart';          // ← FIXED
 import '../utils/image_utils.dart';
 import 'voice_mode_screen.dart';
 import 'vision_mode_screen.dart';
 
 class NovaChatScreen extends StatefulWidget {
-  final AiChatService aiService;
+  final AiChatService aiService;                    // ← FIXED
+
   const NovaChatScreen({super.key, required this.aiService});
 
   @override
@@ -71,16 +72,16 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   String _newId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
 
-  // ── Auto-select model based on task ──
+  // ── Auto‑select model ──
   String _selectModel(String userText, {bool hasImage = false}) {
     if (hasImage) return 'google/gemma-4-26b-a4b';
-    if (userText.toLowerCase().contains('code') || userText.toLowerCase().contains('programming')) {
+    if (userText.toLowerCase().contains('code') ||
+        userText.toLowerCase().contains('programming')) {
       return 'tencent/hy3';
     }
-    return 'tencent/hy3';   // default best model
+    return 'tencent/hy3';
   }
 
-  // ── Send message ──
   void _sendMessage({String? text}) async {
     final userText = text ?? _controller.text.trim();
     if (userText.isEmpty && _attachedFile == null) return;
@@ -109,7 +110,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
     if (!_isProcessingQueue) _processQueue();
   }
 
-  // ── Queue processor ──
   Future<void> _processQueue() async {
     if (_isProcessingQueue) return;
     _isProcessingQueue = true;
@@ -134,13 +134,13 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
         final modelId = _selectModel(req.text, hasImage: imageDataUri != null);
 
-        final response = await widget.aiService.sendMessage(
+        // ✅ Call AiChatService, get a String back
+        final replyText = await widget.aiService.sendMessage(
           userMessage: req.text.isEmpty ? 'Hello!' : req.text,
           imageBase64: imageDataUri,
           modelOverride: modelId,
         );
 
-        final replyText = response; // it's already a String
         final isError = replyText.startsWith('❌');
 
         setState(() {
