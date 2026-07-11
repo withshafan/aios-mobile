@@ -81,13 +81,20 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
     final lower = userText.toLowerCase();
     
-    // Coding / reasoning tasks
+    // Coding / reasoning → Qwen 7B
     if (lower.contains('code') || lower.contains('program') || 
-        lower.contains('debug') || lower.contains('function')) {
+        lower.contains('debug') || lower.contains('function') ||
+        lower.contains('algorithm') || lower.contains('sql')) {
       return 'qwen/qwen-2.5-7b-instruct:free';
     }
     
-    // Fast, simple chat (default)
+    // Complex reasoning → Qwen 7B
+    if (lower.contains('explain') || lower.contains('compare') ||
+        lower.contains('analyze') || lower.contains('reason')) {
+      return 'qwen/qwen-2.5-7b-instruct:free';
+    }
+    
+    // Default – fast, general chat → Llama 3B
     return 'meta-llama/llama-3.2-3b-instruct:free';
   }
 
