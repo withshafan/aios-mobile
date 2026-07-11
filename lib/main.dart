@@ -93,7 +93,6 @@ class MyApp extends StatelessWidget {
           debugPrint('Creating AiChatService...');
           return AiChatService(
             openRouterApiKey: dotenv.env['OPENROUTER_API_KEY'] ?? '',
-            huggingFaceApiToken: dotenv.env['HUGGINGFACE_API_KEY'] ?? '',
             modelOverride: selectedModel,
           );
         }),

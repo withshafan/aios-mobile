@@ -1,18 +1,13 @@
-import '../config/api_keys.dart';
 import 'openrouter_service.dart';
 
 class AiChatService {
-  late final OpenRouterService _openRouter;
+  final String openRouterApiKey;
+  final String? modelOverride;
 
   AiChatService({
-    required String openRouterApiKey,
-    String? modelOverride,
-  }) {
-    _openRouter = OpenRouterService(
-      apiKey: openRouterApiKey,
-      model: modelOverride ?? 'tencent/hy3',
-    );
-  }
+    required this.openRouterApiKey,
+    this.modelOverride,
+  });
 
   Future<String> sendMessage({
     required String userMessage,
@@ -20,12 +15,16 @@ class AiChatService {
     String? imageBase64,
     String? modelOverride,
   }) async {
-    final response = await _openRouter.sendMessage(
+    final service = OpenRouterService(
+      apiKey: openRouterApiKey,
+      model: modelOverride ?? this.modelOverride ?? 'tencent/hy3',
+    );
+    final response = await service.sendMessage(
       userMessage: userMessage,
       history: history,
       imageBase64: imageBase64,
-      modelOverride: modelOverride,
+      modelOverride: modelOverride ?? this.modelOverride,
     );
-    return response.text;   // unwrap the ChatResponse
+    return response.text;
   }
 }

@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // If you want chat state to persist across tab switches, we can use IndexedStack,
     // but a standard switch was used originally. 
     switch (index) {
-      case 0: return const NovaChatScreen();
+      case 0: return NovaChatScreen(aiService: _aiService);
       case 1: return const DashboardScreen();
       case 2: return const TasksScreen();
       case 3: return const WorkflowScreen();
@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            const NovaChatScreen(),
+            NovaChatScreen(aiService: _aiService),
             const DashboardScreen(),
             const TasksScreen(),
             const WorkflowScreen(),
@@ -131,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  const NovaChatScreen(),
+                  NovaChatScreen(aiService: _aiService),
                   const DashboardScreen(),
                   const TasksScreen(),
                   const WorkflowScreen(),
@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  const NovaChatScreen(),
+                  NovaChatScreen(aiService: _aiService),
                   const DashboardScreen(),
                   const TasksScreen(),
                   const WorkflowScreen(),

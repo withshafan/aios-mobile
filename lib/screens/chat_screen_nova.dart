@@ -20,7 +20,8 @@ import 'voice_mode_screen.dart';
 import 'vision_mode_screen.dart';
 
 class NovaChatScreen extends StatefulWidget {
-  const NovaChatScreen({super.key});
+  final AiChatService aiService;
+  const NovaChatScreen({super.key, required this.aiService});
 
   @override
   State<NovaChatScreen> createState() => _NovaChatScreenState();
@@ -132,38 +133,29 @@ class _NovaChatScreenState extends State<NovaChatScreen>
         }
 
         final modelId = _selectModel(req.text, hasImage: imageDataUri != null);
-        final apiKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
 
-        final service = OpenRouterService(apiKey: apiKey);
-        final response = await service.sendMessage(
+        final response = await widget.aiService.sendMessage(
           userMessage: req.text.isEmpty ? 'Hello!' : req.text,
           imageBase64: imageDataUri,
           modelOverride: modelId,
         );
 
-        // ✅ response is now a ChatResponse object, use .text and .isError
+        final replyText = response; // it's already a String
+        final isError = replyText.startsWith('❌');
+
         setState(() {
           _messages.removeWhere((m) => m.id == thinkingId);
-          if (response.isError) {
-            _messages.add(_ChatMessage(
-              id: '${req.id}_err',
-              text: response.text,       // ← .text
-              isUser: false,
-              status: 'Error',
-            ));
-          } else {
-            _messages.add(_ChatMessage(
-              id: '${req.id}_ans',
-              text: response.text,       // ← .text
-              isUser: false,
-              status: 'Sent',
-            ));
-          }
+          _messages.add(_ChatMessage(
+            id: isError ? '${req.id}_err' : '${req.id}_ans',
+            text: replyText,
+            isUser: false,
+            status: isError ? 'Error' : 'Sent',
+          ));
           _setStatus(req.id, 'Sent');
         });
 
-        if (_speakerOn && !response.isError) {
-          _tts.speak(response.text);     // ← .text
+        if (_speakerOn && !isError) {
+          _tts.speak(replyText);
         }
       } catch (_) {
         setState(() {
