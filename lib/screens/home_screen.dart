@@ -10,7 +10,7 @@ import '../services/document_service.dart';
 import '../services/plugin_service.dart';
 import '../services/browser_service.dart';
 import '../services/analytics_service.dart';
-import 'chat_screen.dart';
+import 'chat_screen_nova.dart';
 import 'memory_screen.dart';
 import 'settings_screen.dart';
 import 'tasks_screen.dart';
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // If you want chat state to persist across tab switches, we can use IndexedStack,
     // but a standard switch was used originally. 
     switch (index) {
-      case 0: return ChatScreen(sendMessage: _aiService.sendMessage);
+      case 0: return NovaChatScreen(aiService: _aiService);
       case 1: return const DashboardScreen();
       case 2: return const TasksScreen();
       case 3: return const WorkflowScreen();
@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            ChatScreen(sendMessage: _aiService.sendMessage),
+            NovaChatScreen(aiService: _aiService),
             const DashboardScreen(),
             const TasksScreen(),
             const WorkflowScreen(),
@@ -131,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  ChatScreen(sendMessage: _aiService.sendMessage),
+                  NovaChatScreen(aiService: _aiService),
                   const DashboardScreen(),
                   const TasksScreen(),
                   const WorkflowScreen(),
@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  ChatScreen(sendMessage: _aiService.sendMessage),
+                  NovaChatScreen(aiService: _aiService),
                   const DashboardScreen(),
                   const TasksScreen(),
                   const WorkflowScreen(),
