@@ -7,24 +7,20 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../services/openrouter_service.dart';
 import '../theme/nova_theme.dart';
 import '../widgets/animated_orb.dart';
 import '../widgets/sources_card.dart';
 import '../services/memory_service.dart';
-import '../services/ai_chat_service.dart';
 import '../services/file_extraction_service.dart';
+import '../services/openrouter_service.dart';
 import '../utils/image_utils.dart';
 import 'voice_mode_screen.dart';
 import 'vision_mode_screen.dart';
 
 class NovaChatScreen extends StatefulWidget {
-  final AiChatService aiService;
-
-  const NovaChatScreen({super.key, required this.aiService});
+  const NovaChatScreen({super.key});
 
   @override
   State<NovaChatScreen> createState() => _NovaChatScreenState();
@@ -38,21 +34,17 @@ class _NovaChatScreenState extends State<NovaChatScreen>
   final FileExtractionService _extractionService = FileExtractionService();
   final FlutterTts _tts = FlutterTts();
 
-  // Queue & messages
   final List<_ChatMessage> _messages = [];
   final List<_QueuedRequest> _queue = [];
   bool _isProcessingQueue = false;
   int _idCounter = 0;
 
-  // Attachments
   File? _attachedFile;
   String? _attachedFileName;
   bool _isImageFile = false;
 
-  // Speaker
   bool _speakerOn = false;
 
-  // Quick actions
   final List<_QuickAction> _quickActions = [
     _QuickAction('Ask Anything', Icons.auto_awesome),
     _QuickAction('Create Image', Icons.image),
@@ -60,10 +52,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
     _QuickAction('Brainstorm', Icons.lightbulb),
     _QuickAction('Code', Icons.code),
   ];
-
-  // Model selector
-  String _selectedModel = 'Tencent Hy3';
-  final List<String> _availableModels = ['Tencent Hy3', 'Gemma 4 26B'];
 
   @override
   void initState() {
@@ -82,7 +70,16 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   String _newId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
 
-  // ── Send ──
+  // ── Auto-select model based on task ──
+  String _selectModel(String userText, {bool hasImage = false}) {
+    if (hasImage) return 'google/gemma-4-26b-a4b';
+    if (userText.toLowerCase().contains('code') || userText.toLowerCase().contains('programming')) {
+      return 'tencent/hy3';
+    }
+    return 'tencent/hy3';   // default best model
+  }
+
+  // ── Send message ──
   void _sendMessage({String? text}) async {
     final userText = text ?? _controller.text.trim();
     if (userText.isEmpty && _attachedFile == null) return;
@@ -128,21 +125,16 @@ class _NovaChatScreenState extends State<NovaChatScreen>
         if (req.imageFile != null && req.isImage) {
           imageDataUri = await ImageUtils.fileToBase64DataUri(req.imageFile!);
         } else if (req.imageFile != null) {
-          // File attachment – extract text
           final extracted = await _extractionService.extract(req.imageFile!);
           if (extracted != null) {
             req.text = '${req.text}\n\nAttached file content:\n"""\n$extracted\n"""';
           }
         }
 
-        // Map UI model name to actual model ID
-        final modelId = _selectedModel == 'Tencent Hy3'
-            ? 'tencent/hy3'
-            : 'google/gemma-4-26b-a4b';
-
+        final modelId = _selectModel(req.text, hasImage: imageDataUri != null);
         final apiKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
-        final service = OpenRouterService(apiKey: apiKey);
 
+        final service = OpenRouterService(apiKey: apiKey);
         final response = await service.sendMessage(
           userMessage: req.text.isEmpty ? 'Hello!' : req.text,
           imageBase64: imageDataUri,
@@ -151,16 +143,16 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
         setState(() {
           _messages.removeWhere((m) => m.id == thinkingId);
-          if (response.startsWith('❌')) {
-            _messages.add(_ChatMessage(id: '${req.id}_err', text: response, isUser: false, status: 'Error'));
+          if (response.isError) {
+            _messages.add(_ChatMessage(id: '${req.id}_err', text: response.text, isUser: false, status: 'Error'));
           } else {
-            _messages.add(_ChatMessage(id: '${req.id}_ans', text: response, isUser: false, status: 'Sent'));
+            _messages.add(_ChatMessage(id: '${req.id}_ans', text: response.text, isUser: false, status: 'Sent'));
           }
           _setStatus(req.id, 'Sent');
         });
 
-        if (_speakerOn && !response.startsWith('❌')) {
-          _tts.speak(response);
+        if (_speakerOn && !response.isError) {
+          _tts.speak(response.text);
         }
       } catch (_) {
         setState(() {
@@ -181,7 +173,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
     }
   }
 
-  // ── Attachment ──
+  // ── Attachments ──
   Future<void> _pickAttachment() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.any);
     if (result != null && result.files.isNotEmpty) {
@@ -269,7 +261,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: textColor),
               textAlign: TextAlign.center),
           const SizedBox(height: 24),
-          // Quick actions
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -354,7 +345,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
       );
     }
 
-    // AI message
     final isError = msg.status == 'Error';
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -367,13 +357,11 @@ class _NovaChatScreenState extends State<NovaChatScreen>
                 height: 1.5,
               )),
           const SizedBox(height: 8),
-          // Sources (mock – show after AI responses)
           if (!isError && msg.text.length > 50)
-            SourcesCard(sources: const [
+            SourcesCard(sources: [
               {'title': 'Web Search'},
               {'title': 'Knowledge Base'},
             ]),
-          // Action buttons
           Row(
             children: [
               _actionBtn(Icons.copy, 'Copy', () {
@@ -382,7 +370,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
               }),
               const SizedBox(width: 4),
               _actionBtn(Icons.refresh, 'Retry', () {
-                // Resend last user message
                 final lastUser = _messages.lastWhere((m) => m.isUser, orElse: () => msg);
                 _sendMessage(text: lastUser.text);
               }),
@@ -426,7 +413,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Attachment preview
           if (_attachedFile != null)
             Row(
               children: [
@@ -445,32 +431,18 @@ class _NovaChatScreenState extends State<NovaChatScreen>
                 IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _removeAttachment),
               ],
             ),
-          // Model selector + Input row
           Row(
             children: [
-              // Model selector
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  border: Border.all(color: NovaColors.accent.withOpacity(0.3)),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: DropdownButton<String>(
-                  value: _selectedModel,
-                  underline: const SizedBox(),
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 16),
-                  items: _availableModels.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 12)))).toList(),
-                  onChanged: (v) => setState(() => _selectedModel = v!),
-                ),
+              IconButton(
+                icon: Icon(Icons.attach_file, color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
+                onPressed: _pickAttachment,
               ),
-              const SizedBox(width: 8),
-              // Input field
               Expanded(
                 child: TextField(
                   controller: _controller,
                   style: TextStyle(color: isDark ? NovaColors.darkText : NovaColors.lightText),
                   decoration: InputDecoration(
-                    hintText: 'Ask me anything...',
+                    hintText: 'Message Aura...',
                     hintStyle: TextStyle(color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
                     filled: true,
                     fillColor: isDark ? NovaColors.darkSurface : NovaColors.lightSurface2,
@@ -483,20 +455,6 @@ class _NovaChatScreenState extends State<NovaChatScreen>
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Attach
-              IconButton(
-                icon: Icon(Icons.attach_file, color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
-                onPressed: _pickAttachment,
-              ),
-              // Camera (Vision)
-              IconButton(
-                icon: Icon(Icons.camera_alt, color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const VisionModeScreen()));
-                },
-              ),
-              // Mic
               IconButton(
                 icon: Icon(Icons.mic, color: isDark ? NovaColors.darkTextSecondary : NovaColors.lightTextSecondary),
                 onPressed: () {
@@ -507,9 +465,8 @@ class _NovaChatScreenState extends State<NovaChatScreen>
                   ));
                 },
               ),
-              // Send
               IconButton(
-                icon: const Icon(Icons.send, color: NovaColors.accent),
+                icon: Icon(Icons.send, color: NovaColors.accent),
                 onPressed: () => _sendMessage(),
               ),
             ],
