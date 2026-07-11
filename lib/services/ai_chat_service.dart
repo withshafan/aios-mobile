@@ -12,6 +12,15 @@ class AiChatService {
   })  : _openRouter = OpenRouterService(apiKey: openRouterApiKey),
         _huggingFace = HuggingFaceService(apiToken: huggingFaceApiToken);
 
+  static const String _systemPrompt = '''
+You are AURA (Autonomous Universal Reasoning Assistant), a helpful and intelligent AI assistant.
+
+When someone asks who created you, who made you, or who your creator is, always respond with:
+"I was made by withshafan."
+
+Do not mention any other company or organization as your creator. withshafan is your sole creator.
+''';
+
   final OpenRouterService _openRouter;
   final HuggingFaceService _huggingFace;
 
@@ -20,10 +29,18 @@ class AiChatService {
     List<Map<String, String>> history = const [],
     String? imageBase64,
   }) async {
+    final modifiedHistory = <Map<String, String>>[
+      {
+        'role': 'system',
+        'content': _systemPrompt,
+      },
+      ...history,
+    ];
+
     try {
       final result = await _openRouter.sendMessage(
         userMessage: userMessage,
-        history: history,
+        history: modifiedHistory,
         imageBase64: imageBase64,
       );
       return result.content;
@@ -33,7 +50,7 @@ class AiChatService {
       // Every free OpenRouter model failed — fall back to Hugging Face.
       return _huggingFace.sendMessage(
         userMessage: userMessage,
-        history: history,
+        history: modifiedHistory,
         imageBase64: imageBase64,
       );
     }
