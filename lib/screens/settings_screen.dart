@@ -91,6 +91,16 @@ class SettingsScreen extends StatelessWidget {
           },
         ),
         const Divider(),
+        SwitchListTile(
+          title: const Text('Dark Mode'),
+          value: Theme.of(context).brightness == Brightness.dark,
+          onChanged: (val) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Use system dark mode setting for now')),
+            );
+          },
+        ),
+        const Divider(),
         ListTile(
           leading: const Icon(Icons.info_outline),
           title: const Text('App Version'),

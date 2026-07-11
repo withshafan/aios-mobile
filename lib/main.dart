@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'theme/tokens.dart';
 import 'theme/aura_theme.dart';
+import 'theme/nova_theme.dart';
 import 'services/auth_service.dart';
 import 'services/memory_service.dart';
 import 'services/task_service.dart';
@@ -171,22 +172,9 @@ class MyApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         title: 'AURA',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: AppColors.bgCanvas,
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.accentViolet,
-            secondary: AppColors.accentCyan,
-            surface: AppColors.surfaceBase,
-            error: AppColors.accentCritical,
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppColors.surfaceBase,
-            foregroundColor: AppColors.textPrimary,
-            elevation: 0,
-          ),
-          extensions: [AuraTheme.dark()],
-        ),
+        themeMode: ThemeMode.system,
+        theme: buildLightTheme(),
+        darkTheme: buildDarkTheme(),
         home: const AuthGate(),
       ),
     );
