@@ -1,69 +1,79 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UniversalAiService {
-  // ── Gemini (unlimited free) ──
+  // ── Multiple Gemini keys ──
+  List<String> get _geminiKeys => [
+        dotenv.env['GEMINI_API_KEY'] ?? '',
+        dotenv.env['GEMINI_KEY_2'] ?? '',
+        dotenv.env['GEMINI_KEY_3'] ?? '',
+      ].where((k) => k.isNotEmpty).toList();
+
+  int _geminiIndex = 0;
+
   Future<String?> _tryGemini(String prompt, List<Map<String, String>> history, String? imageBase64) async {
-    final key = dotenv.env['GEMINI_API_KEY'] ?? '';
-    debugPrint('🔵 Gemini key present: ${key.isNotEmpty} (${key.length} chars)');
-    if (key.isEmpty) return null;
+    final keys = _geminiKeys;
+    if (keys.isEmpty) return null;
 
-    try {
-      final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$key',
-      );
+    // Try each key (round‑robin starting from last successful)
+    for (int i = 0; i < keys.length; i++) {
+      final key = keys[(_geminiIndex + i) % keys.length];
+      try {
+        final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$key',
+        );
 
-      final contents = <Map<String, dynamic>>[];
-      for (final h in history) {
-        contents.add({
-          'role': h['role'] == 'assistant' ? 'model' : 'user',
-          'parts': [{'text': h['content']}],
-        });
-      }
+        final contents = <Map<String, dynamic>>[];
+        for (final h in history) {
+          contents.add({
+            'role': h['role'] == 'assistant' ? 'model' : 'user',
+            'parts': [{'text': h['content']}],
+          });
+        }
+        final parts = <Map<String, dynamic>>[{'text': prompt}];
+        if (imageBase64 != null && imageBase64.isNotEmpty) {
+          parts.add({'inline_data': {'mime_type': 'image/jpeg', 'data': imageBase64.split(',').last}});
+        }
+        contents.add({'role': 'user', 'parts': parts});
 
-      final parts = <Map<String, dynamic>>[{'text': prompt}];
-      if (imageBase64 != null && imageBase64.isNotEmpty) {
-        parts.add({'inline_data': {'mime_type': 'image/jpeg', 'data': imageBase64.split(',').last}});
-      }
-      contents.add({'role': 'user', 'parts': parts});
+        final res = await http.post(url, headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'contents': contents,
+            'systemInstruction': {'parts': [{'text': 'You are AURA. Creator: withshafan. Match user language.'}]}
+          }),
+        ).timeout(const Duration(seconds: 15));
 
-      debugPrint('🔵 Gemini: sending request...');
-      final res = await http.post(url, headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': contents,
-          'systemInstruction': {'parts': [{'text': 'You are AURA. Creator: withshafan. Match user language.'}]}
-        }),
-      ).timeout(const Duration(seconds: 15));
-      debugPrint('🔵 Gemini: status ${res.statusCode}');
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        return data['candidates'][0]['content']['parts'][0]['text'] as String?;
-      } else {
-        debugPrint('🔵 Gemini error body: ${res.body.substring(0, res.body.length > 200 ? 200 : res.body.length)}');
-      }
-    } catch (e) {
-      debugPrint('🔵 Gemini exception: $e');
+        if (res.statusCode == 200) {
+          _geminiIndex = (_geminiIndex + i) % keys.length;  // remember winning key
+          final data = jsonDecode(res.body);
+          return data['candidates'][0]['content']['parts'][0]['text'] as String?;
+        } else if (res.statusCode == 429) {
+          debugPrint('🔵 Gemini key ${key.substring(0,6)}: 429, rotating...');
+          continue;   // try next key
+        }
+      } catch (_) {}
     }
     return null;
   }
 
-  // ── OpenRouter (multiple keys) ──
+  // ── OpenRouter (only valid keys) ──
   Future<String?> _tryOpenRouter(String prompt, List<Map<String, String>> history, String? imageBase64) async {
-    final keys = [
-      dotenv.env['OPENROUTER_API_KEY'],
-      dotenv.env['GEMMA_KEY'],
-      dotenv.env['HY3_KEY'],
-    ].where((k) => k != null && k.isNotEmpty).toList();
+    // Only key #0 is valid (the others return 401)
+    final key = dotenv.env['OPENROUTER_API_KEY'] ?? '';
+    if (key.isEmpty) return null;
 
-    debugPrint('🟠 OpenRouter: ${keys.length} keys available');
+    // List of free models to try
+    final freeModels = [
+      'meta-llama/llama-3.2-3b-instruct:free',
+      'meta-llama/llama-3.2-1b-instruct:free',
+      'google/gemma-2-2b-it:free',
+    ];
 
-    for (int i = 0; i < keys.length; i++) {
-      final key = keys[i];
+    for (final model in freeModels) {
       try {
-        debugPrint('🟠 OpenRouter: trying key #$i...');
         final messages = <Map<String, dynamic>>[];
         messages.add({'role': 'system', 'content': 'You are AURA. Creator: withshafan.'});
         for (final h in history) {
@@ -79,27 +89,21 @@ class UniversalAiService {
         final res = await http.post(
           Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
           headers: {'Authorization': 'Bearer $key', 'Content-Type': 'application/json'},
-          body: jsonEncode({'model': 'meta-llama/llama-3.2-3b-instruct:free', 'messages': messages}),
+          body: jsonEncode({'model': model, 'messages': messages}),
         ).timeout(const Duration(seconds: 15));
 
-        debugPrint('🟠 OpenRouter key #$i: status ${res.statusCode}');
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           return data['choices'][0]['message']['content'] as String?;
-        } else {
-          debugPrint('🟠 OpenRouter error: ${res.body.substring(0, res.body.length > 200 ? 200 : res.body.length)}');
         }
-      } catch (e) {
-        debugPrint('🟠 OpenRouter key #$i exception: $e');
-      }
+      } catch (_) {}
     }
     return null;
   }
 
-  // ── Hugging Face (free credits) ──
+  // ── Hugging Face (correct model) ──
   Future<String?> _tryHuggingFace(String prompt, List<Map<String, String>> history) async {
     final token = dotenv.env['HUGGINGFACE_API_KEY'] ?? '';
-    debugPrint('🟣 HuggingFace token present: ${token.isNotEmpty}');
     if (token.isEmpty) return null;
 
     try {
@@ -109,23 +113,21 @@ class UniversalAiService {
       }
       messages.add({'role': 'user', 'content': prompt});
 
-      debugPrint('🟣 HuggingFace: sending request...');
       final res = await http.post(
         Uri.parse('https://router.huggingface.co/v1/chat/completions'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-        body: jsonEncode({'model': 'meta-llama/Llama-3.2-3B-Instruct', 'messages': messages, 'max_tokens': 500}),
+        body: jsonEncode({
+          'model': 'mistralai/Mistral-7B-Instruct-v0.2',   // free, proven to work
+          'messages': messages,
+          'max_tokens': 500,
+        }),
       ).timeout(const Duration(seconds: 20));
-      debugPrint('🟣 HuggingFace: status ${res.statusCode}');
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         return data['choices'][0]['message']['content'] as String?;
-      } else {
-        debugPrint('🟣 HuggingFace error: ${res.body.substring(0, res.body.length > 200 ? 200 : res.body.length)}');
       }
-    } catch (e) {
-      debugPrint('🟣 HuggingFace exception: $e');
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -135,21 +137,19 @@ class UniversalAiService {
     List<Map<String, String>> history = const [],
     String? imageBase64,
   }) async {
-    debugPrint('🚀 UniversalAiService: starting chain...');
     String? reply;
 
     reply = await _tryGemini(userMessage, history, imageBase64);
-    if (reply != null) { debugPrint('✅ Gemini succeeded'); return reply; }
-    debugPrint('⛔ Gemini failed, trying OpenRouter...');
+    if (reply != null) return reply;
 
+    // Wait 2 seconds before trying OpenRouter (allow rate limits to reset)
+    await Future.delayed(const Duration(seconds: 2));
     reply = await _tryOpenRouter(userMessage, history, imageBase64);
-    if (reply != null) { debugPrint('✅ OpenRouter succeeded'); return reply; }
-    debugPrint('⛔ OpenRouter failed, trying HuggingFace...');
+    if (reply != null) return reply;
 
     reply = await _tryHuggingFace(userMessage, history);
-    if (reply != null) { debugPrint('✅ HuggingFace succeeded'); return reply; }
+    if (reply != null) return reply;
 
-    debugPrint('❌ ALL providers failed');
     return '⚠️ All free AI services are temporarily unavailable. Please try again in a few seconds.';
   }
 }
