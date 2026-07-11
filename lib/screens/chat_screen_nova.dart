@@ -86,17 +86,17 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
     final lower = userText.toLowerCase();
     
-    // Coding / reasoning → Qwen 7B
+    // Coding / reasoning → Gemma 2B
     if (lower.contains('code') || lower.contains('program') || 
         lower.contains('debug') || lower.contains('function') ||
         lower.contains('algorithm') || lower.contains('sql')) {
-      return 'qwen/qwen-2.5-7b-instruct:free';
+      return 'google/gemma-2-2b-it:free';
     }
     
-    // Complex reasoning → Qwen 7B
+    // Complex reasoning → Gemma 2B
     if (lower.contains('explain') || lower.contains('compare') ||
         lower.contains('analyze') || lower.contains('reason')) {
-      return 'qwen/qwen-2.5-7b-instruct:free';
+      return 'google/gemma-2-2b-it:free';
     }
     
     // Default – fast, general chat → Llama 3B

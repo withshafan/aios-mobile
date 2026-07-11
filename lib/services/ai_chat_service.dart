@@ -27,7 +27,7 @@ class AiChatService {
     final service = OpenRouterService(
       apiKey: keyToUse,
       model: modelOverride ?? this.modelOverride ?? 'meta-llama/llama-3.2-3b-instruct:free',
-      fallbackModel: fallbackModel ?? 'qwen/qwen-2.5-7b-instruct:free',    // ← default fallback
+      fallbackModel: fallbackModel ?? 'google/gemma-2-2b-it:free',    // ← default fallback
     );
     final response = await service.sendMessage(
       userMessage: userMessage,
