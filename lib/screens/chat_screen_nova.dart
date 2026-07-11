@@ -17,6 +17,10 @@ import '../services/file_extraction_service.dart';
 import '../services/ai_chat_service.dart';
 import '../services/universal_ai_service.dart';
 import '../services/image_generation_service.dart';
+import '../utils/image_utils.dart';
+import 'voice_mode_screen.dart';
+import 'vision_mode_screen.dart';
+import 'live_call_screen.dart';
 
 class NovaChatScreen extends StatefulWidget {
   final AiChatService aiService;
@@ -307,7 +311,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => LiveCallScreen(aiService: widget.aiService),
+                builder: (_) => LiveCallScreen(aiService: _ai),
               ),
             );
           },

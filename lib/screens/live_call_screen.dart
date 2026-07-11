@@ -15,7 +15,7 @@ import '../theme/tokens.dart';
 enum CallPhase { connecting, listening, thinking, speaking, muted, permissionDenied, unsupported }
 
 class LiveCallScreen extends StatefulWidget {
-  final AiChatService aiService;
+  final UniversalAiService aiService;
   const LiveCallScreen({super.key, required this.aiService});
 
   @override
