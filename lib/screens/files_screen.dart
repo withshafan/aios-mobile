@@ -139,22 +139,27 @@ class _FilesScreenState extends State<FilesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (!_hasPermission) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Storage permission required'),
-            ElevatedButton(
-              onPressed: _load,
-              child: const Text('Grant permission'),
-            ),
-          ],
+      return Scaffold(
+        appBar: AppBar(title: const Text('Files')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Storage permission required'),
+              ElevatedButton(
+                onPressed: _load,
+                child: const Text('Grant permission'),
+              ),
+            ],
+          ),
         ),
       );
     }
-    return Column(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Files')),
+      body: Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -219,6 +224,7 @@ class _FilesScreenState extends State<FilesScreen> {
                 ),
         ),
       ],
+    ),
     );
   }
 }

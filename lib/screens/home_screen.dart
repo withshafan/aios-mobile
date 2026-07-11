@@ -86,15 +86,18 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: _selectedIndex == 0 ? null : AppBar(
         title: Text(_navItems[_selectedIndex].label),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          ChatScreen(sendMessage: _aiService.sendMessage),
-          const DashboardScreen(),
-          const TasksScreen(),
-          const WorkflowScreen(),
-          const MoreScreen(),
-        ],
+      body: Material(
+        type: MaterialType.transparency,
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            ChatScreen(sendMessage: _aiService.sendMessage),
+            const DashboardScreen(),
+            const TasksScreen(),
+            const WorkflowScreen(),
+            const MoreScreen(),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -123,15 +126,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const VerticalDivider(width: 1),
           Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: [
-                ChatScreen(sendMessage: _aiService.sendMessage),
-                const DashboardScreen(),
-                const TasksScreen(),
-                const WorkflowScreen(),
-                const MoreScreen(),
-              ],
+            child: Material(
+              type: MaterialType.transparency,
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  ChatScreen(sendMessage: _aiService.sendMessage),
+                  const DashboardScreen(),
+                  const TasksScreen(),
+                  const WorkflowScreen(),
+                  const MoreScreen(),
+                ],
+              ),
             ),
           ),
         ],
@@ -166,15 +172,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const VerticalDivider(width: 1),
           Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: [
-                ChatScreen(sendMessage: _aiService.sendMessage),
-                const DashboardScreen(),
-                const TasksScreen(),
-                const WorkflowScreen(),
-                const MoreScreen(),
-              ],
+            child: Material(
+              type: MaterialType.transparency,
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  ChatScreen(sendMessage: _aiService.sendMessage),
+                  const DashboardScreen(),
+                  const TasksScreen(),
+                  const WorkflowScreen(),
+                  const MoreScreen(),
+                ],
+              ),
             ),
           ),
         ],
