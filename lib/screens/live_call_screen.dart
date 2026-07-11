@@ -69,6 +69,10 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
           _handleUtterance(r.recognizedWords);
         }
       },
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        listenMode: stt.ListenMode.search,
+      ),
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 3),
     );
@@ -92,7 +96,12 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
         _phase = CallPhase.speaking;
         _caption = response;
       });
-      await _tts.speak(response);
+      // Speak sentence by sentence so user hears the start immediately
+      final sentences = response.split(RegExp(r'(?<=[.!?])\s+'));
+      for (final sentence in sentences) {
+        if (!_active) return;
+        await _tts.speak(sentence);
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _caption = "Couldn't reach the AI — listening again.");

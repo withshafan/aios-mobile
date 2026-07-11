@@ -100,6 +100,7 @@ class OpenRouterService {
     List<Map<String, String>> history = const [],
     String? imageBase64,
     List<String> preferredModels = const [
+      'google/gemma-2-2b-it:free',
       'qwen/qwen-2.5-7b-instruct:free',
       'meta-llama/llama-3.2-3b-instruct:free',
       'google/gemma-2-9b-it:free',

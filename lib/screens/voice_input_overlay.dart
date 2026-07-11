@@ -164,7 +164,7 @@ class _VoiceInputOverlayState extends State<VoiceInputOverlay>
       listenOptions: stt.SpeechListenOptions(
         partialResults: true,
         cancelOnError: true,
-        listenMode: stt.ListenMode.confirmation,
+        listenMode: stt.ListenMode.search,
       ),
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 4),
