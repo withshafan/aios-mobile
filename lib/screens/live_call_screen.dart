@@ -21,7 +21,7 @@ class LiveCallScreen extends StatefulWidget {
 }
 
 class _LiveCallScreenState extends State<LiveCallScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {   // ✅ FIX: changed from Single… to regular TickerProviderStateMixin
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
 
@@ -98,7 +98,7 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       pauseFor: const Duration(seconds: 3),
       listenOptions: stt.SpeechListenOptions(
         partialResults: true,
-        listenMode: stt.ListenMode.search, // faster cloud recognition
+        listenMode: stt.ListenMode.search,
       ),
     );
   }
@@ -112,12 +112,11 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       final response = await widget.aiService.sendMessage(
         userMessage: text,
         imageBase64: (_isVideoOn || _isScreenSharing) ? _latestFrameBase64 : null,
-        modelOverride: 'google/gemma-2-2b-it:free', // fast model for calls
+        modelOverride: 'google/gemma-2-2b-it:free',
       );
       if (!mounted || !_active) return;
       setState(() { _phase = CallPhase.speaking; _caption = response; });
 
-      // Speak sentence by sentence for faster feedback
       final sentences = response.split(RegExp(r'(?<=[.!?])\s+'));
       for (final sentence in sentences) {
         if (!_active) return;
@@ -233,18 +232,14 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       body: SafeArea(
         child: Stack(
           children: [
-            // Main content area
             Column(
               children: [
                 const SizedBox(height: 20),
-                // Status text
                 Text(_statusLabel,
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                 const Spacer(),
-                // Central orb / video area
                 _buildCenterPiece(isActive),
                 const Spacer(),
-                // Caption text
                 if (_caption.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -255,12 +250,10 @@ class _LiveCallScreenState extends State<LiveCallScreen>
                         style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
                   ),
                 const Spacer(),
-                // Bottom controls
                 _buildControls(),
                 const SizedBox(height: 30),
               ],
             ),
-            // Video preview overlay (top right)
             if (_isVideoOn && _camera != null)
               Positioned(
                 top: 60,
@@ -283,7 +276,6 @@ class _LiveCallScreenState extends State<LiveCallScreen>
   }
 
   Widget _buildCenterPiece(bool isActive) {
-    // If video is on, show a larger preview instead of the orb
     if (_isVideoOn && _camera != null) {
       return Container(
         width: 260,
@@ -297,7 +289,6 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       );
     }
 
-    // Otherwise show the Gemini-style pulsing orb
     return AnimatedBuilder(
       animation: Listenable.merge([_pulseController, _ringController]),
       builder: (context, _) {
@@ -308,7 +299,6 @@ class _LiveCallScreenState extends State<LiveCallScreen>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Outer ring
               Transform.scale(
                 scale: 1.0 + (_ringController.value * 0.3),
                 child: Container(
@@ -323,7 +313,6 @@ class _LiveCallScreenState extends State<LiveCallScreen>
                   ),
                 ),
               ),
-              // Middle ring
               Transform.scale(
                 scale: 1.0 + (_ringController.value * 0.15),
                 child: Container(
@@ -340,7 +329,6 @@ class _LiveCallScreenState extends State<LiveCallScreen>
                   ),
                 ),
               ),
-              // Center orb
               Transform.scale(
                 scale: pulseScale,
                 child: Container(
@@ -376,28 +364,24 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Mute button
           _circleButton(
             icon: _isMuted ? Icons.mic_off : Icons.mic,
             color: _isMuted ? AppColors.accentCritical : AppColors.surfaceOverlay,
             onTap: _toggleMute,
             label: _isMuted ? 'Unmute' : 'Mute',
           ),
-          // Video button
           _circleButton(
             icon: _isVideoOn ? Icons.videocam : Icons.videocam_off,
             color: _isVideoOn ? AppColors.accentViolet : AppColors.surfaceOverlay,
             onTap: _toggleVideo,
             label: 'Video',
           ),
-          // Screen share button
           _circleButton(
             icon: _isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
             color: _isScreenSharing ? AppColors.accentSuccess : AppColors.surfaceOverlay,
             onTap: _toggleScreenShare,
             label: 'Share',
           ),
-          // End call button
           _circleButton(
             icon: Icons.call_end,
             color: AppColors.accentCritical,
