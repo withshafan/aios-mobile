@@ -6,11 +6,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class SimpleAiService {
   static const List<String> _models = [
     'meta-llama/llama-3.2-3b-instruct:free',
-    'meta-llama/llama-3.2-1b-instruct:free',
-    'google/gemma-2-2b-it:free',
-    'google/gemma-2-9b-it:free',
-    'qwen/qwen-2.5-3b-instruct:free',
   ];
+
+  static const Duration _baseBackoff = Duration(seconds: 8);
+  static const int _maxRetries = 3;
 
   Future<bool> testConnection() async {
     try {
@@ -60,34 +59,42 @@ class SimpleAiService {
     for (final model in _models) {
       debugPrint('🔑 Using key: ${key.length > 12 ? key.substring(0, 12) : key}...');
       debugPrint('📤 Sending request to: $model');
-      try {
-        final res = await http
-            .post(
-              Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
-              headers: {
-                'Authorization': 'Bearer $key',
-                'Content-Type': 'application/json',
-              },
-              body: jsonEncode({'model': model, 'messages': messages}),
-            )
-            .timeout(const Duration(seconds: 30));
 
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body);
-          return data['choices'][0]['message']['content'] as String? ?? 'No response.';
+      for (int attempt = 0; attempt <= _maxRetries; attempt++) {
+        try {
+          final res = await http
+              .post(
+                Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+                headers: {
+                  'Authorization': 'Bearer $key',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({'model': model, 'messages': messages}),
+              )
+              .timeout(const Duration(seconds: 30));
+
+          if (res.statusCode == 200) {
+            final data = jsonDecode(res.body);
+            return data['choices'][0]['message']['content'] as String? ?? 'No response.';
+          }
+
+          if (res.statusCode == 429) {
+            if (attempt < _maxRetries) {
+              final delaySeconds = _baseBackoff.inSeconds * (attempt + 1);
+              debugPrint('⏳ Model $model rate limited (attempt ${attempt + 1}), waiting $delaySeconds seconds…');
+              await Future.delayed(Duration(seconds: delaySeconds));
+              continue;
+            }
+            debugPrint('⏳ Model $model rate limited, max retries reached.');
+            break; // Stop retrying this model
+          }
+
+          debugPrint('❌ API error ${res.statusCode} for model $model: ${res.body}');
+          break; // Non-429 error, stop retrying
+        } catch (e) {
+          debugPrint('❌ Network error with model $model: $e');
+          break; // Network error, stop retrying
         }
-
-        if (res.statusCode == 429) {
-          debugPrint('⏳ Model $model rate limited, trying next model…');
-          continue; // Try the next model
-        }
-
-        debugPrint('❌ API error ${res.statusCode} for model $model: ${res.body}');
-        // If it's a non-429 error, we might still want to try the next model, but let's just continue
-        continue;
-      } catch (e) {
-        debugPrint('❌ Network error with model $model: $e');
-        continue; // Try next model on network error too
       }
     }
     
