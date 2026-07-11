@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Result wrapper so the UI can show which model actually answered
 /// (handy for debugging or a small "answered by: ..." label).
@@ -60,14 +61,22 @@ class OpenRouterService {
   List<String>? _cachedFreeModels;
   DateTime? _cacheTime;
 
-  Map<String, String> get _headers => {
-        'Authorization': 'Bearer $apiKey',
-        'Content-Type': 'application/json',
-        // Optional attribution headers OpenRouter uses for its public
-        // rankings page — not required for requests to work, but good practice.
-        'HTTP-Referer': 'https://your-app.example',
-        'X-Title': 'Your Flutter App',
-      };
+  Map<String, String> _headersForModel(String model) {
+    const modelKeyMap = {
+      'google/gemma-4-26b-a4b': 'GEMMA_KEY',
+      'tencent/hy3': 'HY3_KEY',
+    };
+
+    final envKey = modelKeyMap[model] ?? 'OPENROUTER_API_KEY';
+    final dynamicKey = dotenv.env[envKey] ?? apiKey;
+
+    return {
+      'Authorization': 'Bearer $dynamicKey',
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://aura-aios.app',
+      'X-Title': 'AURA AIOS',
+    };
+  }
 
   /// Pulls the CURRENT list of models that are actually free right now
   /// (prompt price == 0 AND completion price == 0), instead of trusting
@@ -81,7 +90,7 @@ class OpenRouterService {
     }
 
     final res = await http
-        .get(Uri.parse('$_base/models'), headers: _headers)
+        .get(Uri.parse('$_base/models'), headers: _headersForModel(''))
         .timeout(const Duration(seconds: 15));
 
     if (res.statusCode != 200) {
@@ -200,7 +209,7 @@ class OpenRouterService {
     try {
       res = await http
           .post(Uri.parse('$_base/chat/completions'),
-              headers: _headers, body: body)
+              headers: _headersForModel(model), body: body)
           .timeout(const Duration(seconds: 30));
     } on TimeoutException {
       throw _RetryableError('timed out');
