@@ -13,14 +13,18 @@ class OpenRouterService {
   final String apiKey;
   final List<String> models;
 
+  static const int _maxCycles = 6;                // more retries
+  static const Duration _baseBackoff = Duration(seconds: 1);
+  static const Duration _maxBackoff = Duration(seconds: 30);
+
   OpenRouterService({
     required this.apiKey,
     List<String>? models,
   }) : models = models ??
             const [
-              'meta-llama/llama-3.2-3b-instruct:free', // main chat
-              'meta-llama/llama-3.2-11b-vision-instruct:free', // images
-              'meta-llama/llama-3.2-1b-instruct:free', // fast fallback
+              'meta-llama/llama-3.2-3b-instruct:free',
+              'meta-llama/llama-3.2-1b-instruct:free',
+              'meta-llama/llama-3.2-11b-vision-instruct:free',
             ];
 
   static const _base = 'https://openrouter.ai/api/v1';
@@ -33,11 +37,10 @@ class OpenRouterService {
       };
 
   Future<String> sendMessage(List<Map<String, dynamic>> messages) async {
-    for (final model in models) {
-      // Try each model up to 2 times
-      for (int attempt = 0; attempt < 2; attempt++) {
+    for (int cycle = 0; cycle < _maxCycles; cycle++) {
+      for (final model in models) {
         final body = jsonEncode({'model': model, 'messages': messages});
-        debugPrint('📤 Sending to $model (attempt ${attempt + 1})');
+        debugPrint('📤 Sending to $model (cycle ${cycle + 1})');
 
         try {
           final response = await http
@@ -51,31 +54,29 @@ class OpenRouterService {
           }
 
           if (response.statusCode == 429 || response.statusCode >= 500) {
-            // Rate limited or server error, wait and retry
-            final delay = (attempt + 1) * 3;
-            debugPrint('⏳ Retrying in ${delay}s…');
-            await Future.delayed(Duration(seconds: delay));
-            continue; // try next attempt
+            // Rate limited or server error, we will continue to the next model
+            debugPrint('❌ $model overloaded (status ${response.statusCode})');
           } else {
             // Fatal error like 401 or 400
             final errorBody = response.body;
-            debugPrint('❌ $model: $errorBody');
+            debugPrint('❌ $model fatal error: $errorBody');
             throw OpenRouterException('API Error (${response.statusCode}): ${_extractErrorMessage(errorBody)}');
           }
         } catch (e) {
           if (e is OpenRouterException) rethrow;
           debugPrint('❌ Network error with $model: $e');
-          // If network error, might be timeout, we can try to retry
-          if (attempt == 1) {
-            // If it's the last attempt for this model, we'll let the outer loop try the next model
-            break;
-          }
         }
       }
-      debugPrint('🔄 Model $model exhausted, trying next fallback model...');
+      
+      // If we got here, all models failed in this cycle. Apply backoff before next cycle.
+      if (cycle < _maxCycles - 1) {
+        final delaySeconds = (_baseBackoff.inSeconds * (1 << cycle)).clamp(1, _maxBackoff.inSeconds);
+        debugPrint('⏳ All models failed cycle ${cycle + 1}. Retrying in ${delaySeconds}s…');
+        await Future.delayed(Duration(seconds: delaySeconds));
+      }
     }
 
-    // If we exhausted all models and retries
+    // If we exhausted all cycles
     throw OpenRouterException('All models failed to respond.', isAllModelsBusy: true);
   }
 
