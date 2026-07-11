@@ -20,9 +20,11 @@ class LiveCallScreen extends StatefulWidget {
   State<LiveCallScreen> createState() => _LiveCallScreenState();
 }
 
-class _LiveCallScreenState extends State<LiveCallScreen> {
+class _LiveCallScreenState extends State<LiveCallScreen>
+    with SingleTickerProviderStateMixin {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
+
   CameraController? _camera;
   Timer? _frameTimer;
   String? _latestFrameBase64;
@@ -34,10 +36,34 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
   bool _active = true;
   String _caption = '';
 
+  late final AnimationController _pulseController;
+  late final AnimationController _ringController;
+
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _ringController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
     _start();
+  }
+
+  @override
+  void dispose() {
+    _active = false;
+    _frameTimer?.cancel();
+    _speech.stop();
+    _tts.stop();
+    _camera?.dispose();
+    _pulseController.dispose();
+    _ringController.dispose();
+    if (_isScreenSharing) ScreenShareChannel.stop();
+    super.dispose();
   }
 
   Future<void> _start() async {
@@ -49,12 +75,11 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
     final available = await _speech.initialize(
       onError: (e) => debugPrint('STT error: ${e.errorMsg}'),
     );
-
     if (!available) {
       final status = await Permission.microphone.status;
       setState(() => _caption = status.isPermanentlyDenied
-          ? 'Microphone access denied — enable it in Settings.'
-          : 'Microphone permission needed for a live call.');
+          ? 'Microphone access denied'
+          : 'Microphone permission needed');
       return;
     }
     _listenTurn();
@@ -69,35 +94,30 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
           _handleUtterance(r.recognizedWords);
         }
       },
-      listenOptions: stt.SpeechListenOptions(
-        partialResults: true,
-        listenMode: stt.ListenMode.search,
-      ),
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 3),
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        listenMode: stt.ListenMode.search, // faster cloud recognition
+      ),
     );
   }
 
   Future<void> _handleUtterance(String text) async {
     if (!_active) return;
     await _speech.stop();
-    setState(() {
-      _phase = CallPhase.thinking;
-      _caption = text;
-    });
+    setState(() { _phase = CallPhase.thinking; _caption = text; });
 
     try {
       final response = await widget.aiService.sendMessage(
         userMessage: text,
         imageBase64: (_isVideoOn || _isScreenSharing) ? _latestFrameBase64 : null,
-        modelOverride: 'google/gemma-2-2b-it:free',
+        modelOverride: 'google/gemma-2-2b-it:free', // fast model for calls
       );
       if (!mounted || !_active) return;
-      setState(() {
-        _phase = CallPhase.speaking;
-        _caption = response;
-      });
-      // Speak sentence by sentence so user hears the start immediately
+      setState(() { _phase = CallPhase.speaking; _caption = response; });
+
+      // Speak sentence by sentence for faster feedback
       final sentences = response.split(RegExp(r'(?<=[.!?])\s+'));
       for (final sentence in sentences) {
         if (!_active) return;
@@ -127,33 +147,39 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
       setState(() { _camera = null; _isVideoOn = false; });
       return;
     }
-    if (!(await Permission.camera.request()).isGranted) return;
+    if (!(await Permission.camera.request()).isGranted) {
+      setState(() => _caption = 'Camera permission denied');
+      return;
+    }
+    try {
+      final cameras = await availableCameras();
+      final front = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+      final controller = CameraController(front, ResolutionPreset.medium, enableAudio: false);
+      await controller.initialize();
 
-    final cameras = await availableCameras();
-    final front = cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.front,
-      orElse: () => cameras.first,
-    );
-    final controller = CameraController(front, ResolutionPreset.low, enableAudio: false);
-    await controller.initialize();
+      _frameTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+        if (!controller.value.isInitialized) return;
+        final file = await controller.takePicture();
+        _latestFrameBase64 = await ImageUtils.fileToBase64DataUri(File(file.path));
+      });
 
-    _frameTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
-      if (!controller.value.isInitialized) return;
-      final file = await controller.takePicture();
-      _latestFrameBase64 = await ImageUtils.fileToBase64DataUri(File(file.path));
-    });
-
-    setState(() {
-      _camera = controller;
-      _isVideoOn = true;
-      if (_isScreenSharing) _isScreenSharing = false;
-    });
+      setState(() {
+        _camera = controller;
+        _isVideoOn = true;
+        if (_isScreenSharing) _isScreenSharing = false;
+      });
+    } catch (e) {
+      setState(() => _caption = 'Camera error: $e');
+    }
   }
 
   Future<void> _toggleScreenShare() async {
     if (!Platform.isAndroid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Screen share is Android-only for now.')),
+        const SnackBar(content: Text('Screen share is Android-only')),
       );
       return;
     }
@@ -162,14 +188,23 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
       setState(() => _isScreenSharing = false);
       return;
     }
-    final granted = await ScreenShareChannel.start();
-    if (!granted) return;
-
-    ScreenShareChannel.frames.listen((frame) => _latestFrameBase64 = frame);
-    setState(() {
-      _isScreenSharing = true;
-      if (_isVideoOn) _toggleVideo();
-    });
+    try {
+      final granted = await ScreenShareChannel.start();
+      if (!granted) {
+        setState(() => _caption = 'Screen share permission denied');
+        return;
+      }
+      ScreenShareChannel.frames.listen(
+        (frame) => _latestFrameBase64 = frame,
+        onError: (e) => debugPrint('Screen share error: $e'),
+      );
+      setState(() {
+        _isScreenSharing = true;
+        if (_isVideoOn) _toggleVideo();
+      });
+    } catch (e) {
+      setState(() => _caption = 'Screen share error: $e');
+    }
   }
 
   Future<void> _endCall() async {
@@ -182,16 +217,6 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  @override
-  void dispose() {
-    _active = false;
-    _frameTimer?.cancel();
-    _speech.stop();
-    _tts.stop();
-    _camera?.dispose();
-    super.dispose();
-  }
-
   String get _statusLabel => switch (_phase) {
     CallPhase.connecting => 'Connecting…',
     CallPhase.listening => 'Listening…',
@@ -202,73 +227,212 @@ class _LiveCallScreenState extends State<LiveCallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final active = _phase == CallPhase.listening || _phase == CallPhase.speaking;
+    final isActive = _phase == CallPhase.listening || _phase == CallPhase.speaking;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.bgCanvas,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const SizedBox(height: 40),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: active ? 140 : 120,
-              height: active ? 140 : 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: _phase == CallPhase.speaking
-                      ? [AppColors.accentCyan, AppColors.accentViolet]
-                      : [AppColors.accentSuccess, AppColors.accentCyan],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(_statusLabel, style: const TextStyle(color: Colors.white70, fontSize: 16)),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(_caption, textAlign: TextAlign.center, maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 15)),
-            ),
-            const Spacer(),
-            if (_isVideoOn && _camera != null)
-              Container(
-                width: 100, height: 140,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white24)),
-                clipBehavior: Clip.hardEdge,
-                child: CameraPreview(_camera!),
-              ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Main content area
+            Column(
               children: [
-                _callBtn(_isMuted ? Icons.mic_off : Icons.mic, _isMuted, _toggleMute),
-                const SizedBox(width: 20),
-                _callBtn(_isVideoOn ? Icons.videocam : Icons.videocam_off, _isVideoOn, _toggleVideo),
-                const SizedBox(width: 20),
-                _callBtn(_isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
-                    _isScreenSharing, _toggleScreenShare),
-                const SizedBox(width: 20),
-                _callBtn(Icons.call_end, true, _endCall, color: Colors.red),
+                const SizedBox(height: 20),
+                // Status text
+                Text(_statusLabel,
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+                const Spacer(),
+                // Central orb / video area
+                _buildCenterPiece(isActive),
+                const Spacer(),
+                // Caption text
+                if (_caption.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(_caption,
+                        textAlign: TextAlign.center,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+                  ),
+                const Spacer(),
+                // Bottom controls
+                _buildControls(),
+                const SizedBox(height: 30),
               ],
             ),
-            const SizedBox(height: 40),
+            // Video preview overlay (top right)
+            if (_isVideoOn && _camera != null)
+              Positioned(
+                top: 60,
+                right: 20,
+                child: Container(
+                  width: 120,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.accentViolet, width: 2),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: CameraPreview(_camera!),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _callBtn(IconData icon, bool active, VoidCallback onTap, {Color? color}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CircleAvatar(
-        radius: 28,
-        backgroundColor: color ?? (active ? Colors.white : Colors.white24),
-        child: Icon(icon, color: color != null ? Colors.white : (active ? Colors.black : Colors.white)),
+  Widget _buildCenterPiece(bool isActive) {
+    // If video is on, show a larger preview instead of the orb
+    if (_isVideoOn && _camera != null) {
+      return Container(
+        width: 260,
+        height: 340,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.accentViolet.withOpacity(0.5), width: 2),
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: CameraPreview(_camera!),
+      );
+    }
+
+    // Otherwise show the Gemini-style pulsing orb
+    return AnimatedBuilder(
+      animation: Listenable.merge([_pulseController, _ringController]),
+      builder: (context, _) {
+        final pulseScale = 1.0 + (_pulseController.value * 0.15);
+        return SizedBox(
+          width: 200,
+          height: 200,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer ring
+              Transform.scale(
+                scale: 1.0 + (_ringController.value * 0.3),
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.accentViolet.withOpacity(0.3 - _ringController.value * 0.2),
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+              // Middle ring
+              Transform.scale(
+                scale: 1.0 + (_ringController.value * 0.15),
+                child: Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.accentViolet.withOpacity(0.4),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Center orb
+              Transform.scale(
+                scale: pulseScale,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: isActive
+                          ? [AppColors.accentCyan, AppColors.accentViolet]
+                          : [AppColors.textDisabled, AppColors.textSecondary],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.accentViolet.withOpacity(0.4),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildControls() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Mute button
+          _circleButton(
+            icon: _isMuted ? Icons.mic_off : Icons.mic,
+            color: _isMuted ? AppColors.accentCritical : AppColors.surfaceOverlay,
+            onTap: _toggleMute,
+            label: _isMuted ? 'Unmute' : 'Mute',
+          ),
+          // Video button
+          _circleButton(
+            icon: _isVideoOn ? Icons.videocam : Icons.videocam_off,
+            color: _isVideoOn ? AppColors.accentViolet : AppColors.surfaceOverlay,
+            onTap: _toggleVideo,
+            label: 'Video',
+          ),
+          // Screen share button
+          _circleButton(
+            icon: _isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
+            color: _isScreenSharing ? AppColors.accentSuccess : AppColors.surfaceOverlay,
+            onTap: _toggleScreenShare,
+            label: 'Share',
+          ),
+          // End call button
+          _circleButton(
+            icon: Icons.call_end,
+            color: AppColors.accentCritical,
+            onTap: _endCall,
+            label: 'End',
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _circleButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required String label,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 26),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+      ],
     );
   }
 }
