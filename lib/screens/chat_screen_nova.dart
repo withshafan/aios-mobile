@@ -135,11 +135,18 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
         final modelId = _selectModel(req.text, hasImage: imageDataUri != null);
 
+        final apiKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
+        final hy3Key = dotenv.env['HY3_KEY'] ?? apiKey;
+        final gemmaKey = dotenv.env['GEMMA_KEY'] ?? apiKey;
+
+        final keyToUse = modelId == 'google/gemma-4-26b-a4b' ? gemmaKey : hy3Key;
+
         // ✅ Call AiChatService, get a String back
         final replyText = await widget.aiService.sendMessage(
           userMessage: req.text.isEmpty ? 'Hello!' : req.text,
           imageBase64: imageDataUri,
           modelOverride: modelId,
+          apiKeyOverride: keyToUse,
         );
 
         final isError = replyText.startsWith('❌');

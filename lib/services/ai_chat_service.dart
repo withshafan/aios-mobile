@@ -17,9 +17,13 @@ class AiChatService {
     List<Map<String, String>> history = const [],
     String? imageBase64,
     String? modelOverride,
+    String? apiKeyOverride,
   }) async {
+    final keyToUse = apiKeyOverride ?? openRouterApiKey;
+    debugPrint('🔑 Using key: ${keyToUse.length > 12 ? keyToUse.substring(0, 12) : keyToUse}...');
+
     final service = OpenRouterService(
-      apiKey: openRouterApiKey,
+      apiKey: keyToUse,
       model: modelOverride ?? this.modelOverride ?? 'tencent/hy3',
     );
     final response = await service.sendMessage(
