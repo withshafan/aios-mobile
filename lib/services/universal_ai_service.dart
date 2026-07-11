@@ -111,9 +111,9 @@ class UniversalAiService {
 
       debugPrint('🟣 HuggingFace: sending request...');
       final res = await http.post(
-        Uri.parse('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3/v1/chat/completions'),
+        Uri.parse('https://router.huggingface.co/v1/chat/completions'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-        body: jsonEncode({'model': 'mistralai/Mistral-7B-Instruct-v0.3', 'messages': messages, 'max_tokens': 500}),
+        body: jsonEncode({'model': 'meta-llama/Llama-3.2-3B-Instruct', 'messages': messages, 'max_tokens': 500}),
       ).timeout(const Duration(seconds: 20));
       debugPrint('🟣 HuggingFace: status ${res.statusCode}');
 
