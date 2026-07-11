@@ -73,14 +73,10 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
   String _newId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';
 
-  // ── Auto‑select model ──
   String _selectModel(String userText, {bool hasImage = false}) {
-    if (hasImage) return 'google/gemma-4-26b-a4b';
-    if (userText.toLowerCase().contains('code') ||
-        userText.toLowerCase().contains('programming')) {
-      return 'tencent/hy3';
-    }
-    return 'tencent/hy3';
+    // Use only FREE models – no credits needed
+    if (hasImage) return 'meta-llama/llama-3.2-11b-vision-instruct:free';
+    return 'meta-llama/llama-3.2-3b-instruct:free';
   }
 
   void _sendMessage({String? text}) async {
@@ -135,11 +131,7 @@ class _NovaChatScreenState extends State<NovaChatScreen>
 
         final modelId = _selectModel(req.text, hasImage: imageDataUri != null);
 
-        final apiKey = dotenv.env['OPENROUTER_API_KEY'] ?? '';
-        final hy3Key = dotenv.env['HY3_KEY'] ?? apiKey;
-        final gemmaKey = dotenv.env['GEMMA_KEY'] ?? apiKey;
-
-        final keyToUse = modelId == 'google/gemma-4-26b-a4b' ? gemmaKey : hy3Key;
+        final keyToUse = dotenv.env['OPENROUTER_API_KEY'] ?? '';
 
         // ✅ Call AiChatService, get a String back
         final replyText = await widget.aiService.sendMessage(
