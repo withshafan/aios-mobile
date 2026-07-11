@@ -10,7 +10,7 @@ import '../utils/image_utils.dart';
 import '../services/screen_share_channel.dart';
 import '../theme/tokens.dart';
 
-enum CallPhase { connecting, listening, thinking, speaking, muted }
+enum CallPhase { connecting, listening, thinking, speaking, muted, permissionDenied, unsupported }
 
 class LiveCallScreen extends StatefulWidget {
   final AiChatService aiService;
@@ -21,7 +21,7 @@ class LiveCallScreen extends StatefulWidget {
 }
 
 class _LiveCallScreenState extends State<LiveCallScreen>
-    with TickerProviderStateMixin {   // ✅ FIX: changed from Single… to regular TickerProviderStateMixin
+    with TickerProviderStateMixin {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
 
@@ -35,6 +35,7 @@ class _LiveCallScreenState extends State<LiveCallScreen>
   bool _isScreenSharing = false;
   bool _active = true;
   String _caption = '';
+  String _debugInfo = '';
 
   late final AnimationController _pulseController;
   late final AnimationController _ringController;
@@ -43,12 +44,10 @@ class _LiveCallScreenState extends State<LiveCallScreen>
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      vsync: this, duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
     _ringController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      vsync: this, duration: const Duration(milliseconds: 2000),
     )..repeat();
     _start();
   }
@@ -72,14 +71,35 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       if (_active && !_isMuted) _listenTurn();
     });
 
+    // Check microphone permission first
+    final micStatus = await Permission.microphone.status;
+    debugPrint('🎤 Mic permission status: $micStatus');
+
+    if (!micStatus.isGranted) {
+      final requested = await Permission.microphone.request();
+      debugPrint('🎤 Mic permission requested: $requested');
+      if (!requested.isGranted) {
+        setState(() => _phase = CallPhase.permissionDenied);
+        return;
+      }
+    }
+
     final available = await _speech.initialize(
-      onError: (e) => debugPrint('STT error: ${e.errorMsg}'),
+      onError: (e) {
+        debugPrint('🎤 STT error: ${e.errorMsg}');
+        setState(() => _debugInfo = 'STT error: ${e.errorMsg}');
+      },
+      onStatus: (status) {
+        debugPrint('🎤 STT status: $status');
+        if (status == 'listening') {
+          setState(() => _debugInfo = 'Listening...');
+        }
+      },
     );
+
+    debugPrint('🎤 SpeechToText available: $available');
     if (!available) {
-      final status = await Permission.microphone.status;
-      setState(() => _caption = status.isPermanentlyDenied
-          ? 'Microphone access denied'
-          : 'Microphone permission needed');
+      setState(() => _phase = CallPhase.unsupported);
       return;
     }
     _listenTurn();
@@ -88,10 +108,16 @@ class _LiveCallScreenState extends State<LiveCallScreen>
   Future<void> _listenTurn() async {
     if (!_active || _isMuted) return;
     setState(() => _phase = CallPhase.listening);
+
+    debugPrint('🎤 Starting to listen...');
     await _speech.listen(
       onResult: (r) {
+        debugPrint('🎤 Result: ${r.recognizedWords} (final: ${r.finalResult})');
         if (r.finalResult && r.recognizedWords.trim().isNotEmpty) {
           _handleUtterance(r.recognizedWords);
+        }
+        if (!r.finalResult) {
+          setState(() => _caption = r.recognizedWords);
         }
       },
       listenFor: const Duration(seconds: 30),
@@ -114,6 +140,17 @@ class _LiveCallScreenState extends State<LiveCallScreen>
         imageBase64: (_isVideoOn || _isScreenSharing) ? _latestFrameBase64 : null,
         modelOverride: 'google/gemma-2-2b-it:free',
       );
+
+      // Check if response is an error
+      if (response.startsWith('❌')) {
+        if (!mounted || !_active) return;
+        setState(() {
+          _phase = CallPhase.muted;
+          _caption = response;
+        });
+        return;
+      }
+
       if (!mounted || !_active) return;
       setState(() { _phase = CallPhase.speaking; _caption = response; });
 
@@ -124,8 +161,10 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() => _caption = "Couldn't reach the AI — listening again.");
-      _listenTurn();
+      setState(() {
+        _caption = "Couldn't reach the AI — listening again.";
+        _phase = CallPhase.muted;
+      });
     }
   }
 
@@ -222,6 +261,8 @@ class _LiveCallScreenState extends State<LiveCallScreen>
     CallPhase.thinking => 'Thinking…',
     CallPhase.speaking => 'Speaking…',
     CallPhase.muted => 'Muted',
+    CallPhase.permissionDenied => 'Mic permission denied',
+    CallPhase.unsupported => 'Voice not supported on this device',
   };
 
   @override
@@ -244,10 +285,16 @@ class _LiveCallScreenState extends State<LiveCallScreen>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(_caption,
-                        textAlign: TextAlign.center,
-                        maxLines: 4,
+                        textAlign: TextAlign.center, maxLines: 4,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+                  ),
+                // Show debug info during development
+                if (_debugInfo.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(_debugInfo,
+                        style: TextStyle(color: AppColors.textDisabled, fontSize: 11)),
                   ),
                 const Spacer(),
                 _buildControls(),
@@ -256,11 +303,9 @@ class _LiveCallScreenState extends State<LiveCallScreen>
             ),
             if (_isVideoOn && _camera != null)
               Positioned(
-                top: 60,
-                right: 20,
+                top: 60, right: 20,
                 child: Container(
-                  width: 120,
-                  height: 160,
+                  width: 120, height: 160,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.accentViolet, width: 2),
@@ -278,8 +323,7 @@ class _LiveCallScreenState extends State<LiveCallScreen>
   Widget _buildCenterPiece(bool isActive) {
     if (_isVideoOn && _camera != null) {
       return Container(
-        width: 260,
-        height: 340,
+        width: 260, height: 340,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.accentViolet.withOpacity(0.5), width: 2),
@@ -294,16 +338,14 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       builder: (context, _) {
         final pulseScale = 1.0 + (_pulseController.value * 0.15);
         return SizedBox(
-          width: 200,
-          height: 200,
+          width: 200, height: 200,
           child: Stack(
             alignment: Alignment.center,
             children: [
               Transform.scale(
                 scale: 1.0 + (_ringController.value * 0.3),
                 child: Container(
-                  width: 160,
-                  height: 160,
+                  width: 160, height: 160,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -316,15 +358,11 @@ class _LiveCallScreenState extends State<LiveCallScreen>
               Transform.scale(
                 scale: 1.0 + (_ringController.value * 0.15),
                 child: Container(
-                  width: 130,
-                  height: 130,
+                  width: 130, height: 130,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
-                      colors: [
-                        AppColors.accentViolet.withOpacity(0.4),
-                        Colors.transparent,
-                      ],
+                      colors: [AppColors.accentViolet.withOpacity(0.4), Colors.transparent],
                     ),
                   ),
                 ),
@@ -332,8 +370,7 @@ class _LiveCallScreenState extends State<LiveCallScreen>
               Transform.scale(
                 scale: pulseScale,
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 100, height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -344,8 +381,7 @@ class _LiveCallScreenState extends State<LiveCallScreen>
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.accentViolet.withOpacity(0.4),
-                        blurRadius: 30,
-                        spreadRadius: 5,
+                        blurRadius: 30, spreadRadius: 5,
                       ),
                     ],
                   ),
@@ -364,53 +400,32 @@ class _LiveCallScreenState extends State<LiveCallScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _circleButton(
-            icon: _isMuted ? Icons.mic_off : Icons.mic,
-            color: _isMuted ? AppColors.accentCritical : AppColors.surfaceOverlay,
-            onTap: _toggleMute,
-            label: _isMuted ? 'Unmute' : 'Mute',
-          ),
-          _circleButton(
-            icon: _isVideoOn ? Icons.videocam : Icons.videocam_off,
-            color: _isVideoOn ? AppColors.accentViolet : AppColors.surfaceOverlay,
-            onTap: _toggleVideo,
-            label: 'Video',
-          ),
-          _circleButton(
-            icon: _isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
-            color: _isScreenSharing ? AppColors.accentSuccess : AppColors.surfaceOverlay,
-            onTap: _toggleScreenShare,
-            label: 'Share',
-          ),
-          _circleButton(
-            icon: Icons.call_end,
-            color: AppColors.accentCritical,
-            onTap: _endCall,
-            label: 'End',
-          ),
+          _circleButton(icon: _isMuted ? Icons.mic_off : Icons.mic,
+              color: _isMuted ? AppColors.accentCritical : AppColors.surfaceOverlay,
+              onTap: _toggleMute, label: _isMuted ? 'Unmute' : 'Mute'),
+          _circleButton(icon: _isVideoOn ? Icons.videocam : Icons.videocam_off,
+              color: _isVideoOn ? AppColors.accentViolet : AppColors.surfaceOverlay,
+              onTap: _toggleVideo, label: 'Video'),
+          _circleButton(icon: _isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
+              color: _isScreenSharing ? AppColors.accentSuccess : AppColors.surfaceOverlay,
+              onTap: _toggleScreenShare, label: 'Share'),
+          _circleButton(icon: Icons.call_end,
+              color: AppColors.accentCritical, onTap: _endCall, label: 'End'),
         ],
       ),
     );
   }
 
-  Widget _circleButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-    required String label,
-  }) {
+  Widget _circleButton({required IconData icon, required Color color,
+      required VoidCallback onTap, required String label}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
           onTap: onTap,
           child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            width: 56, height: 56,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             child: Icon(icon, color: Colors.white, size: 26),
           ),
         ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -206,16 +207,21 @@ class OpenRouterService {
     });
 
     http.Response res;
+    debugPrint('📤 Sending to OpenRouter model: $model');
     try {
       res = await http
           .post(Uri.parse('$_base/chat/completions'),
               headers: _headersForModel(model), body: body)
           .timeout(const Duration(seconds: 30));
     } on TimeoutException {
+      debugPrint('❌ OpenRouter Timeout for $model');
       throw _RetryableError('timed out');
     } catch (e) {
+      debugPrint('❌ OpenRouter Network Error for $model: $e');
       throw _RetryableError('network error: $e');
     }
+
+    debugPrint('📥 Response status: ${res.statusCode}');
 
     // Bad key / unauthorized — no point trying other models.
     if (res.statusCode == 401 || res.statusCode == 403) {
@@ -234,6 +240,7 @@ class OpenRouterService {
     }
 
     if (res.statusCode != 200) {
+      debugPrint('❌ API Error: ${res.body}');
       // Covers "Provider returned error", model retired/not found,
       // request shape the specific model doesn't support, etc.
       throw _RetryableError('HTTP ${res.statusCode}: ${res.body}');
